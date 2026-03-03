@@ -1,0 +1,10 @@
+﻿__pycache__/
+*.py[cod]
+*.log
+.venv/
+venv/
+.env
+config/setting.toml
+data/*.db
+data/*.db-*
+playwright-report/

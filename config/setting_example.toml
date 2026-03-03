@@ -1,0 +1,29 @@
+﻿[server]
+host = "0.0.0.0"
+port = 8060
+
+[storage]
+db_path = "data/captcha_service.db"
+
+[admin]
+username = "admin"
+password = "admin"
+
+[captcha]
+browser_count = 1
+browser_proxy_enabled = false
+browser_proxy_url = ""
+browser_launch_background = true
+browser_score_dom_wait_seconds = 25
+browser_recaptcha_settle_seconds = 3
+browser_score_test_warmup_seconds = 12
+flow_timeout = 300
+upsample_timeout = 300
+session_ttl_seconds = 7200
+node_name = "standalone-node"
+
+[log]
+level = "INFO"
+
+[cluster]
+role = "standalone"
