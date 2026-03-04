@@ -182,6 +182,27 @@ docker pull ghcr.io/genz27/flow_captcha_service-headed:latest
 
 如果仓库/包是私有，请使用有 `read:packages` 权限的 PAT 登录后再拉取。
 
+### 拉取镜像是否需要环境变量？
+
+- `docker pull`：不需要设置环境变量。
+- `docker run` / `docker compose up`：需要按节点角色配置环境变量。
+
+最小角色配置建议：
+
+- `master`：
+  - `FCS_CLUSTER_ROLE=master`
+- `subnode`：
+  - `FCS_CLUSTER_ROLE=subnode`
+  - `FCS_CLUSTER_MASTER_BASE_URL`
+  - `FCS_CLUSTER_MASTER_CLUSTER_KEY`
+  - `FCS_CLUSTER_NODE_PUBLIC_BASE_URL`
+  - `FCS_CLUSTER_NODE_API_KEY`
+
+如果使用仓库内的 compose 文件，绝大多数变量已内置，通常只需要替换：
+
+- `FCS_CLUSTER_MASTER_CLUSTER_KEY`
+- `FCS_CLUSTER_NODE_API_KEY`
+
 ## 主节点如何通知子节点关闭
 
 `flow_captcha_service` 没有单独的 `/close` 业务接口，关闭语义通过会话协议实现：
