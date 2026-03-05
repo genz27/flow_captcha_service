@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from typing import Any, Dict, List, Optional, Tuple
 import urllib.error
 import urllib.parse
@@ -19,6 +20,8 @@ class ClusterManager:
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._dispatch_cursor = 0
         self._dispatch_lock = asyncio.Lock()
+        # 记录短时调度预留槽位，用于覆盖“心跳上报滞后”窗口，避免瞬时超发。
+        self._dispatch_reservations: Dict[int, List[float]] = {}
 
     async def start(self):
         if config.cluster_role == "subnode":
@@ -39,7 +42,14 @@ class ClusterManager:
             raise RuntimeError("暂无可用子节点")
 
         last_error = ""
+        attempted = False
         for node in nodes:
+            reserved = await self._try_reserve_dispatch_slot(node)
+            if not reserved:
+                continue
+
+            attempted = True
+            node_id = int(node.get("id") or 0)
             try:
                 result = await self._post_to_node(
                     node=node,
@@ -56,10 +66,13 @@ class ClusterManager:
                 result["node_name"] = node["node_name"]
                 return result
             except Exception as e:
+                await self._release_dispatch_slot(node_id)
                 last_error = str(e)
                 await self.db.mark_cluster_node_error(int(node["id"]), last_error)
                 debug_logger.log_warning(f"[ClusterManager] dispatch solve node={node['node_name']} failed: {last_error}")
 
+        if not attempted:
+            raise RuntimeError("暂无可用子节点")
         raise RuntimeError(f"子节点打码失败: {last_error or 'unknown'}")
 
     async def dispatch_finish(self, routed_session_id: str, status: str) -> Dict[str, Any]:
@@ -88,19 +101,31 @@ class ClusterManager:
             raise RuntimeError("暂无可用子节点")
 
         last_error = ""
+        attempted = False
         for node in nodes:
+            reserved = await self._try_reserve_dispatch_slot(node)
+            if not reserved:
+                continue
+
+            attempted = True
+            node_id = int(node.get("id") or 0)
             try:
-                return await self._post_to_node(
+                result = await self._post_to_node(
                     node=node,
                     path="/api/v1/custom-score",
                     json_payload=request_payload,
                     timeout=config.cluster_master_dispatch_timeout_seconds,
                 )
+                await self._release_dispatch_slot(node_id)
+                return result
             except Exception as e:
+                await self._release_dispatch_slot(node_id)
                 last_error = str(e)
                 await self.db.mark_cluster_node_error(int(node["id"]), last_error)
                 debug_logger.log_warning(f"[ClusterManager] dispatch custom-score node={node['node_name']} failed: {last_error}")
 
+        if not attempted:
+            raise RuntimeError("暂无可用子节点")
         raise RuntimeError(f"子节点分数校验失败: {last_error or 'unknown'}")
 
     async def register_node(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -180,66 +205,120 @@ class ClusterManager:
         if not filtered_nodes:
             return []
 
-        decorated = [self.decorate_node_capacity(node) for node in filtered_nodes]
-        with_idle = [node for node in decorated if int(node.get("thread_idle") or 0) > 0]
-        without_idle = [node for node in decorated if int(node.get("thread_idle") or 0) <= 0]
+        async with self._dispatch_lock:
+            self._prune_dispatch_reservations_locked()
 
-        with_idle.sort(
-            key=lambda node: (
-                -int(node.get("thread_idle") or 0),
-                int(node.get("thread_active") or 0),
-                -int(node.get("weight") or 100),
-                int(node.get("id") or 0),
+            decorated: List[Dict[str, Any]] = []
+            for node in filtered_nodes:
+                node_id = int(node.get("id") or 0)
+                reserved = len(self._dispatch_reservations.get(node_id, []))
+                decorated.append(self.decorate_node_capacity(node, extra_active=reserved))
+
+            with_idle = [node for node in decorated if int(node.get("thread_idle") or 0) > 0]
+            if not with_idle:
+                # 全部节点都无空闲容量时，直接返回空，避免继续向已满节点灌流量。
+                return []
+
+            with_idle.sort(
+                key=lambda node: (
+                    -int(node.get("thread_idle") or 0),
+                    int(node.get("thread_active") or 0),
+                    -int(node.get("weight") or 100),
+                    int(node.get("id") or 0),
+                )
             )
-        )
-        without_idle.sort(
-            key=lambda node: (
-                int(node.get("thread_active") or 0),
-                -int(node.get("weight") or 100),
-                int(node.get("id") or 0),
-            )
-        )
+
+            weighted_ring: List[Dict[str, Any]] = []
+            for node in with_idle:
+                idle = max(1, int(node.get("thread_idle") or 0))
+                weight = max(1, int(node.get("weight") or 100))
+                weight_factor = max(1, round(weight / 100.0))
+                tickets = min(200, max(1, idle * weight_factor))
+                weighted_ring.extend([node] * tickets)
+
+            start = self._dispatch_cursor % len(weighted_ring)
+            self._dispatch_cursor = (self._dispatch_cursor + 1) % len(weighted_ring)
+
+            ordered_idle: List[Dict[str, Any]] = []
+            seen_node_ids = set()
+            for offset in range(len(weighted_ring)):
+                node = weighted_ring[(start + offset) % len(weighted_ring)]
+                node_id = int(node.get("id") or 0)
+                if node_id in seen_node_ids:
+                    continue
+                seen_node_ids.add(node_id)
+                ordered_idle.append(node)
+                if len(ordered_idle) >= len(with_idle):
+                    break
+
+            return ordered_idle
+
+    def _dispatch_reservation_window_seconds(self) -> float:
+        heartbeat_window = max(10, int(config.cluster_heartbeat_interval_seconds) * 2)
+        dispatch_window = max(10, int(config.cluster_master_dispatch_timeout_seconds) + 5)
+        return float(max(heartbeat_window, dispatch_window))
+
+    def _prune_dispatch_reservations_locked(self):
+        if not self._dispatch_reservations:
+            return
+
+        expire_before = time.time() - self._dispatch_reservation_window_seconds()
+        stale_node_ids: List[int] = []
+        for node_id, slots in self._dispatch_reservations.items():
+            valid_slots = [ts for ts in slots if ts >= expire_before]
+            if valid_slots:
+                self._dispatch_reservations[node_id] = valid_slots
+            else:
+                stale_node_ids.append(node_id)
+
+        for node_id in stale_node_ids:
+            self._dispatch_reservations.pop(node_id, None)
+
+    async def _try_reserve_dispatch_slot(self, node: Dict[str, Any]) -> bool:
+        node_id = int(node.get("id") or 0)
+        if node_id <= 0:
+            return False
+
+        total_capacity = max(1, int(node.get("thread_total") or node.get("max_concurrency") or 1))
+        reported_active = max(0, int(node.get("reported_active_sessions") or node.get("active_sessions") or 0))
 
         async with self._dispatch_lock:
-            if with_idle:
-                weighted_ring: List[Dict[str, Any]] = []
-                for node in with_idle:
-                    idle = max(1, int(node.get("thread_idle") or 0))
-                    weight = max(1, int(node.get("weight") or 100))
-                    weight_factor = max(1, round(weight / 100.0))
-                    tickets = min(200, max(1, idle * weight_factor))
-                    weighted_ring.extend([node] * tickets)
+            self._prune_dispatch_reservations_locked()
+            reserved = len(self._dispatch_reservations.get(node_id, []))
+            if reported_active + reserved >= total_capacity:
+                return False
 
-                start = self._dispatch_cursor % len(weighted_ring)
-                self._dispatch_cursor = (self._dispatch_cursor + 1) % len(weighted_ring)
+            self._dispatch_reservations.setdefault(node_id, []).append(time.time())
+            return True
 
-                ordered_idle: List[Dict[str, Any]] = []
-                seen_node_ids = set()
-                for offset in range(len(weighted_ring)):
-                    node = weighted_ring[(start + offset) % len(weighted_ring)]
-                    node_id = int(node.get("id") or 0)
-                    if node_id in seen_node_ids:
-                        continue
-                    seen_node_ids.add(node_id)
-                    ordered_idle.append(node)
-                    if len(ordered_idle) >= len(with_idle):
-                        break
+    async def _release_dispatch_slot(self, node_id: int):
+        if node_id <= 0:
+            return
 
-                return ordered_idle + without_idle
+        async with self._dispatch_lock:
+            self._prune_dispatch_reservations_locked()
+            slots = self._dispatch_reservations.get(node_id)
+            if not slots:
+                return
 
-            start = self._dispatch_cursor % len(without_idle)
-            self._dispatch_cursor = (self._dispatch_cursor + 1) % len(without_idle)
-            return without_idle[start:] + without_idle[:start]
+            slots.pop()
+            if slots:
+                self._dispatch_reservations[node_id] = slots
+            else:
+                self._dispatch_reservations.pop(node_id, None)
 
     @staticmethod
-    def decorate_node_capacity(node: Dict[str, Any]) -> Dict[str, Any]:
-        active = max(0, int(node.get("active_sessions") or 0))
+    def decorate_node_capacity(node: Dict[str, Any], extra_active: int = 0) -> Dict[str, Any]:
+        reported_active = max(0, int(node.get("active_sessions") or 0))
+        active = reported_active + max(0, int(extra_active or 0))
         total = max(1, int(node.get("max_concurrency") or 1))
         idle = max(total - active, 0)
         decorated = dict(node)
         decorated["thread_total"] = total
         decorated["thread_active"] = active
         decorated["thread_idle"] = idle
+        decorated["reported_active_sessions"] = reported_active
+        decorated["dispatch_reserved"] = max(0, int(extra_active or 0))
         return decorated
 
     def decorate_nodes_capacity(self, nodes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -374,12 +453,9 @@ class ClusterManager:
         configured_browser_count = 0
         if isinstance(browser_stats, dict):
             configured_browser_count = max(0, int(browser_stats.get("configured_browser_count") or 0))
-        effective_capacity = max(
-            1,
-            configured_browser_count,
-            int(config.cluster_node_max_concurrency),
-            active_sessions,
-        )
+        configured_browser_count = max(1, configured_browser_count or int(config.browser_count))
+        configured_dispatch_limit = max(1, int(config.cluster_node_max_concurrency))
+        effective_capacity = max(1, min(configured_browser_count, configured_dispatch_limit))
 
         register_payload = {
             "node_name": config.node_name,
