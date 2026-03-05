@@ -5,30 +5,190 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>flow_captcha_service 管理后台</title>
   <style>
-    :root{--bg:#fff;--panel:#fff;--line:#e4e4e7;--text:#09090b;--muted:#71717a;--primary:#18181b;--ok:#dcfce7;--warn:#fef3c7;--err:#fee2e2;--shadow:none}
-    *{box-sizing:border-box}body{margin:0;color:var(--text);background:var(--bg);font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif}
-    .container{width:min(1180px,94vw);margin:0 auto;padding:12px 0 32px}.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 -2vw 14px;padding:10px 2vw;border-bottom:1px solid var(--line);background:rgba(255,255,255,.95);backdrop-filter:blur(6px)}.title{margin:0;font-size:24px}.subtitle{margin:6px 0 0;color:var(--muted);font-size:12px}
-    .role-badge{padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:12px;color:#27272a;white-space:nowrap}.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:16px;margin-top:14px}.panel h2{margin:0;font-size:17px}.panel-desc{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.6}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:13px;font-weight:600;color:#334155}.field .hint{font-size:12px;color:var(--muted)}
-    .field input,.field select,.field textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 11px;font-size:13px;color:#0f172a;background:#fff;outline:none}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.12)}.field textarea{min-height:90px;resize:vertical}
-    .checkbox-line{display:flex;align-items:center;gap:8px;margin-top:10px;color:#334155;font-size:13px;font-weight:600}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-    button{border:1px solid transparent;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;color:#fff;background:var(--primary)}button.secondary{color:#27272a;border-color:var(--line);background:#fff}button.warn{background:#b45309}
-    .notice{margin-top:12px;border-radius:10px;border:1px solid;padding:10px;font-size:13px;line-height:1.6;display:none}.notice.ok{display:block;background:var(--ok);border-color:#86efac;color:#166534}.notice.warn{display:block;background:var(--warn);border-color:#fcd34d;color:#92400e}.notice.err{display:block;background:var(--err);border-color:#fecaca;color:#991b1b}
-    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}.card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}.card .k{font-size:12px;color:var(--muted)}.card .v{margin-top:6px;font-size:24px;font-weight:700;color:#0b1324}
-    .guide-items,.guide-steps{margin:10px 0 0;padding-left:18px;line-height:1.7;font-size:13px}.guide-tag{display:inline-flex;align-items:center;border-radius:999px;font-size:11px;padding:1px 8px;margin-right:8px;border:1px solid}.guide-tag.critical{color:#991b1b;background:#fee2e2;border-color:#fca5a5}.guide-tag.required{color:#92400e;background:#fef3c7;border-color:#fcd34d}.guide-tag.info{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}
-    .table-wrap{width:100%;overflow-x:auto}table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}th,td{border-bottom:1px solid #edf2f7;padding:9px 8px;text-align:left;vertical-align:middle}th{color:#475569;font-weight:700;background:#f8fafc}
-    .hidden{display:none!important}#dashboard{display:none}#loginPanel{max-width:560px;margin:16px auto 0}details.advanced{margin-top:10px;border:1px dashed #d4d4d8;border-radius:10px;padding:8px 10px 10px;background:#fafafa}details.advanced>summary{cursor:pointer;font-size:13px;color:#27272a;font-weight:600}
-    .toast{position:fixed;right:16px;bottom:16px;z-index:999;padding:10px 14px;border-radius:10px;color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 20px rgba(0,0,0,.18);animation:toast-in .22s ease}.toast.ok{background:#15803d}.toast.warn{background:#b45309}.toast.err{background:#dc2626}
+    :root{
+      --bg:#edf2f8;
+      --panel:#ffffff;
+      --line:#d5dfeb;
+      --text:#0f172a;
+      --muted:#5b6676;
+      --primary:#0f172a;
+      --ok:#dcfce7;
+      --warn:#fef3c7;
+      --err:#fee2e2;
+      --shadow:0 10px 24px rgba(15,23,42,.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 420px at -10% -20%, rgba(29,78,216,.18), transparent 56%),
+        radial-gradient(920px 340px at 110% -10%, rgba(14,116,144,.14), transparent 52%),
+        linear-gradient(180deg,#f7faff 0%,#edf2f8 56%,#eaf0f7 100%);
+      font-family:"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+      min-height:100vh;
+    }
+    .container{width:min(1180px,94vw);margin:0 auto;padding:18px 0 36px}
+    .topbar{
+      position:sticky;
+      top:12px;
+      z-index:20;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
+      padding:14px 18px;
+      border:1px solid rgba(148,163,184,.28);
+      border-radius:18px;
+      background:rgba(255,255,255,.82);
+      backdrop-filter:blur(14px);
+      box-shadow:0 18px 40px rgba(15,23,42,.08);
+    }
+    .brand{display:flex;align-items:flex-start;gap:12px}
+    .brand-dot{
+      width:14px;
+      height:14px;
+      margin-top:9px;
+      border-radius:999px;
+      background:linear-gradient(135deg,#2563eb,#0ea5e9);
+      box-shadow:0 0 0 6px rgba(37,99,235,.12);
+      flex:none;
+    }
+    .title{
+      margin:0;
+      font-size:32px;
+      line-height:1.08;
+      letter-spacing:.2px;
+      text-wrap:balance;
+    }
+    .subtitle{margin:7px 0 0;color:var(--muted);font-size:13px;line-height:1.5}
+    .role-badge{
+      padding:8px 14px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(248,250,252,.8);
+      font-size:12px;
+      color:#1e293b;
+      font-weight:600;
+      white-space:nowrap;
+    }
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:14px;
+      box-shadow:var(--shadow);
+      padding:16px;
+      margin-top:14px;
+    }
+    .panel h2{margin:0;font-size:18px}
+    .panel-desc{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.65}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field label{font-size:13px;font-weight:700;color:#334155}
+    .field .hint{font-size:12px;color:var(--muted)}
+    .field input,.field select,.field textarea{
+      width:100%;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      padding:10px 11px;
+      font-size:13px;
+      color:#0f172a;
+      background:#fff;
+      outline:none;
+      transition:border-color .18s ease,box-shadow .18s ease;
+    }
+    .field input:focus,.field select:focus,.field textarea:focus{
+      border-color:#2563eb;
+      box-shadow:0 0 0 3px rgba(37,99,235,.12);
+    }
+    .field textarea{min-height:90px;resize:vertical}
+    .checkbox-line{display:flex;align-items:center;gap:8px;margin-top:10px;color:#334155;font-size:13px;font-weight:600}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    button{
+      border:1px solid transparent;
+      border-radius:10px;
+      padding:9px 15px;
+      font-size:13px;
+      cursor:pointer;
+      color:#fff;
+      background:linear-gradient(120deg,#0f172a,#1e293b);
+      transition:transform .15s ease,box-shadow .15s ease,filter .15s ease;
+    }
+    button:hover{transform:translateY(-1px);box-shadow:0 8px 16px rgba(15,23,42,.2);filter:brightness(1.03)}
+    button.secondary{color:#27272a;border-color:var(--line);background:#fff}
+    button.warn{background:#b45309}
+    .notice{margin-top:12px;border-radius:10px;border:1px solid;padding:10px;font-size:13px;line-height:1.6;display:none}
+    .notice.ok{display:block;background:var(--ok);border-color:#86efac;color:#166534}
+    .notice.warn{display:block;background:var(--warn);border-color:#fcd34d;color:#92400e}
+    .notice.err{display:block;background:var(--err);border-color:#fecaca;color:#991b1b}
+    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+    .card{border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+    .card .k{font-size:12px;color:var(--muted)}
+    .card .v{margin-top:6px;font-size:24px;font-weight:700;color:#0b1324}
+    .guide-items,.guide-steps{margin:10px 0 0;padding-left:18px;line-height:1.7;font-size:13px}
+    .guide-tag{display:inline-flex;align-items:center;border-radius:999px;font-size:11px;padding:1px 8px;margin-right:8px;border:1px solid}
+    .guide-tag.critical{color:#991b1b;background:#fee2e2;border-color:#fca5a5}
+    .guide-tag.required{color:#92400e;background:#fef3c7;border-color:#fcd34d}
+    .guide-tag.info{color:#1e3a8a;background:#dbeafe;border-color:#93c5fd}
+    .table-wrap{width:100%;overflow-x:auto}
+    table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+    th,td{border-bottom:1px solid #edf2f7;padding:9px 8px;text-align:left;vertical-align:middle}
+    th{color:#475569;font-weight:700;background:#f8fafc}
+    .hidden{display:none!important}
+    #dashboard{display:none}
+    #loginPanel{
+      max-width:680px;
+      margin:24px auto 0;
+      padding:0;
+      overflow:hidden;
+      border-radius:18px;
+      border:1px solid rgba(148,163,184,.35);
+      box-shadow:0 18px 40px rgba(15,23,42,.11);
+    }
+    .login-hero{
+      padding:20px 22px;
+      border-bottom:1px solid #e2e8f0;
+      background:linear-gradient(135deg,#f8fbff 0%,#eef4ff 46%,#e8f4ff 100%);
+    }
+    .login-hero h2{margin:0;font-size:24px;letter-spacing:.2px}
+    .login-hero .panel-desc{margin:8px 0 0;font-size:13px;color:#4b5563}
+    .login-body{padding:18px 22px 22px}
+    .login-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:0}
+    .login-actions{margin-top:14px}
+    .login-actions button{min-width:110px}
+    details.advanced{margin-top:10px;border:1px dashed #d4d4d8;border-radius:10px;padding:8px 10px 10px;background:#fafafa}
+    details.advanced>summary{cursor:pointer;font-size:13px;color:#27272a;font-weight:600}
+    .toast{position:fixed;right:16px;bottom:16px;z-index:999;padding:10px 14px;border-radius:10px;color:#fff;font-size:13px;font-weight:600;box-shadow:0 10px 20px rgba(0,0,0,.18);animation:toast-in .22s ease}
+    .toast.ok{background:#15803d}
+    .toast.warn{background:#b45309}
+    .toast.err{background:#dc2626}
     @keyframes toast-in{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
-    @media (max-width:1000px){.grid,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:640px){.topbar{flex-direction:column;align-items:flex-start}.grid,.cards{grid-template-columns:1fr}.title{font-size:22px}}
+    @media (max-width:1000px){
+      .title{font-size:27px}
+      .grid,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:640px){
+      .container{padding-top:12px}
+      .topbar{flex-direction:column;align-items:flex-start;padding:12px 14px;border-radius:16px}
+      .brand-dot{width:12px;height:12px;margin-top:7px}
+      .title{font-size:22px}
+      .grid,.cards,.login-grid{grid-template-columns:1fr}
+      #loginPanel{margin-top:16px}
+      .login-hero{padding:16px}
+      .login-hero h2{font-size:21px}
+      .login-body{padding:14px 16px 16px}
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="topbar">
-      <div>
-        <h1 class="title">flow_captcha_service 管理后台</h1>
-        <p class="subtitle">简化配置、中文提示、按角色展示：主节点/子节点/单机模式</p>
+      <div class="brand">
+        <div class="brand-dot" aria-hidden="true"></div>
+        <div>
+          <h1 class="title">flow_captcha_service 管理后台</h1>
+          <p class="subtitle">简化配置、中文提示、按角色展示：主节点/子节点/单机模式</p>
+        </div>
       </div>
       <div id="roleBadge" class="role-badge">当前角色：未登录</div>
     </div>
@@ -36,14 +196,18 @@
     <div id="notice" class="notice"></div>
     <div id="envNotice" class="notice warn hidden"></div>
 
-    <section id="loginPanel" class="panel">
-      <h2>管理员登录</h2>
-      <p class="panel-desc">默认首次账号通常为 admin / admin，登录后建议立即修改。</p>
-      <div class="grid">
-        <div class="field"><label>用户名</label><input id="loginUsername" value="admin" /></div>
-        <div class="field"><label>密码</label><input id="loginPassword" type="password" value="admin" /></div>
+    <section id="loginPanel" class="panel panel-login">
+      <div class="login-hero">
+        <h2>管理员登录</h2>
+        <p class="panel-desc">默认首次账号通常为 admin / admin，登录后建议立即修改。</p>
       </div>
-      <div class="actions"><button id="loginBtn">登录后台</button></div>
+      <div class="login-body">
+        <div class="grid login-grid">
+          <div class="field"><label>用户名</label><input id="loginUsername" value="admin" /></div>
+          <div class="field"><label>密码</label><input id="loginPassword" type="password" value="admin" /></div>
+        </div>
+        <div class="actions login-actions"><button id="loginBtn">登录后台</button></div>
+      </div>
     </section>
 
     <div id="dashboard">
