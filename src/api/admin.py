@@ -761,3 +761,22 @@ async def update_cluster_node(
         "success": True,
         "item": updated,
     }
+
+
+@router.delete("/cluster/nodes/{node_id}")
+async def delete_cluster_node(
+    node_id: int,
+    token: str = Depends(verify_admin_token),
+):
+    if _db is None:
+        raise HTTPException(status_code=500, detail="服务未初始化")
+    _assert_master_role("子节点管理")
+
+    deleted = await _db.delete_cluster_node(node_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="节点不存在")
+
+    return {
+        "success": True,
+        "message": f"子节点 #{node_id} 已删除",
+    }

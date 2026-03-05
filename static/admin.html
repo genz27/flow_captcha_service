@@ -568,7 +568,7 @@
           const tr = document.createElement("tr");
           const threadTotal = it.thread_total ?? it.max_concurrency ?? 1;
           const scheduleLimitText = `${it.max_concurrency ?? threadTotal}<span class="hint" style="display:block">自动同步</span>`;
-          tr.innerHTML = `<td>${it.id}</td><td>${it.node_name || "-"}</td><td>${it.base_url || "-"}</td><td>${it.healthy ? "健康" : "异常"}</td><td><input type="checkbox" data-node-id="${it.id}" data-node-key="enabled" ${it.enabled ? "checked" : ""} /></td><td>${threadTotal}</td><td>${it.thread_idle ?? "-"}</td><td>${scheduleLimitText}</td><td><input data-node-id="${it.id}" data-node-key="weight" value="${it.weight ?? 100}" /></td><td>${it.last_heartbeat_at || "-"}</td><td><button class="secondary" data-action="save-node" data-id="${it.id}">保存</button></td>`;
+          tr.innerHTML = `<td>${it.id}</td><td>${it.node_name || "-"}</td><td>${it.base_url || "-"}</td><td>${it.healthy ? "健康" : "异常"}</td><td><input type="checkbox" data-node-id="${it.id}" data-node-key="enabled" ${it.enabled ? "checked" : ""} /></td><td>${threadTotal}</td><td>${it.thread_idle ?? "-"}</td><td>${scheduleLimitText}</td><td><input data-node-id="${it.id}" data-node-key="weight" value="${it.weight ?? 100}" /></td><td>${it.last_heartbeat_at || "-"}</td><td><div class="actions" style="margin-top:0"><button class="secondary" data-action="save-node" data-id="${it.id}">保存</button><button class="warn" data-action="delete-node" data-id="${it.id}">删除</button></div></td>`;
           b.appendChild(tr);
         }
       };
@@ -704,6 +704,22 @@
             await req(`/api/admin/cluster/nodes/${id}`, { method: "PATCH", body: { enabled: !!enabledEl?.checked, weight: toInt(weightEl?.value, 100) } });
             await loadClusterNodes(); showNotice(`子节点 #${id} 已保存。`, "ok");
           } catch (err) { showNotice(`保存子节点失败：${err.message}`, "err"); }
+        }
+
+        if (target.dataset.action === "delete-node") {
+          const id = Number(target.dataset.id);
+          if (!Number.isFinite(id) || id <= 0) return;
+          const ok = window.confirm(`确定删除子节点 #${id} 吗？删除后将从主节点列表移除。`);
+          if (!ok) return;
+
+          try {
+            await req(`/api/admin/cluster/nodes/${id}`, { method: "DELETE" });
+            await loadClusterNodes();
+            await loadStats();
+            showNotice(`子节点 #${id} 已删除。`, "ok");
+          } catch (err) {
+            showNotice(`删除子节点失败：${err.message}`, "err");
+          }
         }
       });
       tryRestoreLogin();

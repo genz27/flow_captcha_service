@@ -817,6 +817,12 @@ class Database:
 
         return await self.get_cluster_node(node_id)
 
+    async def delete_cluster_node(self, node_id: int) -> bool:
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("DELETE FROM cluster_nodes WHERE id = ?", (node_id,))
+            await db.commit()
+            return (cursor.rowcount or 0) > 0
+
     async def mark_cluster_node_error(self, node_id: int, error_message: str):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute(
