@@ -28,7 +28,7 @@
       font-family:"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
       min-height:100vh;
     }
-    .container{width:min(1180px,94vw);margin:0 auto;padding:18px 0 36px}
+    .container{width:min(1360px,96vw);margin:0 auto;padding:18px 0 36px}
     .topbar{
       position:sticky;
       top:12px;
@@ -155,14 +155,42 @@
     table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
     th,td{border-bottom:1px solid #edf2f7;padding:9px 8px;text-align:left;vertical-align:middle}
     th{color:#475569;font-weight:700;background:#f8fafc}
+    .cluster-panel{
+      border-color:#ccdae8;
+      background:
+        radial-gradient(540px 160px at 0% 0%, rgba(37,99,235,.07), transparent 65%),
+        linear-gradient(180deg,#ffffff 0%,#f8fbff 58%,#f5faff 100%);
+    }
+    .cluster-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .cluster-header .actions{margin-top:0}
+    .cluster-base{
+      margin-top:12px;
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .cluster-base .field{margin:0}
+    .cluster-base .field input{
+      background:linear-gradient(180deg,#ffffff,#f9fbff);
+      font-weight:600;
+    }
     .cluster-toolbar{
       margin-top:12px;
       display:grid;
-      grid-template-columns:2fr 1.2fr 1fr;
+      grid-template-columns:2.2fr 1.2fr 1fr;
       gap:10px;
       align-items:end;
     }
     .cluster-toolbar .field{margin:0}
+    .cluster-toolbar .field input,.cluster-toolbar .field select{
+      background:#ffffff;
+    }
     .cluster-kpis{
       margin-top:12px;
       display:grid;
@@ -170,33 +198,154 @@
       gap:10px;
     }
     .cluster-kpi{
-      border:1px solid #dbe4ef;
-      border-radius:12px;
-      padding:10px;
-      background:linear-gradient(180deg,#ffffff,#f8fbff);
+      border:1px solid #d9e6f2;
+      border-radius:14px;
+      padding:11px 12px;
+      background:linear-gradient(180deg,#ffffff,#f6fbff);
+      box-shadow:0 8px 18px rgba(15,23,42,.05);
     }
-    .cluster-kpi .k{font-size:12px;color:#64748b}
-    .cluster-kpi .v{margin-top:5px;font-size:21px;font-weight:700;color:#0f172a}
-    .cluster-kpi .s{margin-top:4px;font-size:11px;color:#64748b}
-    .cluster-result{margin-top:8px;font-size:12px;color:#64748b}
+    .cluster-kpi .k{font-size:12px;color:#5f7086}
+    .cluster-kpi .v{margin-top:5px;font-size:24px;font-weight:800;color:#0f172a;line-height:1}
+    .cluster-kpi .s{margin-top:6px;font-size:11px;color:#5f7086}
+    .cluster-result{
+      margin-top:10px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px dashed #cfe0ef;
+      background:#f9fcff;
+      font-size:12px;
+      color:#4c5e76;
+      font-weight:600;
+    }
     .cluster-wrap{
-      margin-top:8px;
-      max-height:62vh;
-      border:1px solid #dbe4ef;
-      border-radius:12px;
+      margin-top:10px;
+      max-height:64vh;
+      border:1px solid #cfddeb;
+      border-radius:14px;
       background:#fff;
       overflow:auto;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.6),0 6px 14px rgba(15,23,42,.04);
     }
-    .cluster-table{margin-top:0}
+    .cluster-table{
+      margin-top:0;
+      min-width:1620px;
+    }
+    .cluster-table th,.cluster-table td{
+      padding:11px 9px;
+      border-bottom:1px solid #e7eff7;
+      vertical-align:middle;
+      font-size:12.5px;
+    }
     .cluster-table th{
       position:sticky;
       top:0;
       z-index:1;
-      background:#f8fafc;
+      background:linear-gradient(180deg,#f8fbff,#f2f7fd);
+      color:#3f536c;
+      font-weight:700;
+      font-size:12px;
+      letter-spacing:.1px;
+      white-space:nowrap;
     }
-    .cluster-table tbody tr:nth-child(even){background:#fcfdff}
-    .cluster-table tbody tr:hover{background:#f1f5f9}
-    .reason-badge{display:inline-flex;align-items:center;gap:4px}
+    .cluster-table tbody tr:nth-child(even){background:#fbfdff}
+    .cluster-table tbody tr:hover{background:#eef5ff}
+    .cluster-table td:nth-child(1),
+    .cluster-table td:nth-child(4),
+    .cluster-table td:nth-child(5),
+    .cluster-table td:nth-child(6),
+    .cluster-table td:nth-child(7),
+    .cluster-table td:nth-child(8),
+    .cluster-table td:nth-child(9),
+    .cluster-table td:nth-child(10),
+    .cluster-table td:nth-child(11),
+    .cluster-table td:nth-child(13){
+      text-align:center;
+    }
+    .node-id{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:34px;
+      padding:3px 7px;
+      border-radius:999px;
+      border:1px solid #cddceb;
+      background:#f8fbff;
+      color:#42546b;
+      font-size:12px;
+      font-weight:700;
+    }
+    .node-name{
+      font-size:13px;
+      font-weight:700;
+      color:#16263b;
+      max-width:200px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .node-url{
+      max-width:280px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      color:#384d67;
+      font-size:12px;
+    }
+    .metric-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:28px;
+      padding:2px 7px;
+      border-radius:999px;
+      border:1px solid #cfe0ef;
+      background:#f8fbff;
+      color:#2b425a;
+      font-weight:700;
+      font-size:12px;
+      line-height:1.2;
+    }
+    .metric-chip.strong{
+      border-color:#93c5fd;
+      background:#e0f2fe;
+      color:#0b4a6e;
+    }
+    .metric-chip.active{
+      border-color:#fca5a5;
+      background:#fee2e2;
+      color:#9f1239;
+    }
+    .metric-chip.idle{
+      border-color:#86efac;
+      background:#dcfce7;
+      color:#166534;
+    }
+    .reason-badge{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      max-width:180px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .time-cell{
+      color:#334155;
+      line-height:1.25;
+      white-space:nowrap;
+    }
+    .cluster-actions{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .cluster-actions button{
+      margin:0;
+      padding:6px 10px;
+      font-size:12px;
+      border-radius:9px;
+    }
     .input-mini{
       width:82px;
       border:1px solid #cbd5e1;
@@ -353,6 +502,7 @@
       .title{font-size:27px}
       .grid,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
       .cluster-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .cluster-base{grid-template-columns:1fr}
       .cluster-toolbar{grid-template-columns:1fr 1fr}
       .overview-charts{grid-template-columns:1fr 1fr}
     }
@@ -363,7 +513,7 @@
       .title{font-size:22px}
       .grid,.cards,.login-grid{grid-template-columns:1fr}
       .drawer-grid{grid-template-columns:1fr}
-      .cluster-kpis,.cluster-toolbar{grid-template-columns:1fr}
+      .cluster-kpis,.cluster-toolbar,.cluster-base{grid-template-columns:1fr}
       .overview-charts{grid-template-columns:1fr}
       #loginPanel{margin-top:16px}
       .login-hero{padding:16px}
@@ -513,19 +663,26 @@
       </div>
 
       <div id="pageCluster" class="page">
-        <section id="masterClusterPanel" class="panel hidden">
-          <h2>主节点集群诊断</h2>
-          <p class="panel-desc">容量拆分口径：effective_capacity=min(browser_count,node_max_concurrency)。调度上限由子节点上报自动同步。</p>
-          <div class="grid">
+        <section id="masterClusterPanel" class="panel hidden cluster-panel">
+          <div class="cluster-header">
+            <div>
+              <h2>主节点集群诊断</h2>
+              <p class="panel-desc">容量拆分口径：effective_capacity=min(browser_count,node_max_concurrency)。调度上限由子节点上报自动同步。</p>
+            </div>
+            <div class="actions">
+              <button id="rotateClusterKeyBtn" class="warn">轮换 Cluster Key</button>
+              <button id="refreshNodesBtn" class="secondary">刷新子节点列表</button>
+            </div>
+          </div>
+          <div class="cluster-base">
             <div class="field"><label>当前 Cluster Key</label><input id="clusterKey" readonly /></div>
             <div class="field"><label>当前节点名称</label><input id="clusterNodeName" readonly /></div>
           </div>
-          <div class="actions"><button id="rotateClusterKeyBtn" class="warn">轮换 Cluster Key</button><button id="refreshNodesBtn" class="secondary">刷新子节点列表</button></div>
           <div class="cluster-kpis">
             <div class="cluster-kpi"><div class="k">节点总数</div><div id="clusterKpiNodeTotal" class="v">-</div><div class="s">已启用：<span id="clusterKpiNodeEnabled">-</span></div></div>
             <div class="cluster-kpi"><div class="k">健康节点</div><div id="clusterKpiHealthy" class="v">-</div><div class="s">异常：<span id="clusterKpiUnhealthy">-</span></div></div>
-            <div class="cluster-kpi"><div class="k">有效总容量</div><div id="clusterKpiCapacity" class="v">-</div><div class="s">Σ effective_capacity</div></div>
-            <div class="cluster-kpi"><div class="k">空闲容量</div><div id="clusterKpiIdle" class="v">-</div><div class="s">Σ thread_idle</div></div>
+            <div class="cluster-kpi"><div class="k">有效总容量</div><div id="clusterKpiCapacity" class="v">-</div><div class="s">Σ 有效容量</div></div>
+            <div class="cluster-kpi"><div class="k">空闲容量</div><div id="clusterKpiIdle" class="v">-</div><div class="s">Σ 空闲线程</div></div>
             <div class="cluster-kpi"><div class="k">平均心跳延迟</div><div id="clusterKpiHeartbeat" class="v">-</div><div class="s">单位：秒</div></div>
           </div>
           <div class="cluster-toolbar">
@@ -534,7 +691,7 @@
             <div class="field"><label>最近刷新</label><input id="clusterLastUpdated" readonly placeholder="未刷新" /></div>
           </div>
           <div id="clusterResultHint" class="cluster-result">显示 0/0 个节点</div>
-          <div class="table-wrap cluster-wrap"><table class="cluster-table"><thead><tr><th>ID</th><th>节点名</th><th>子节点对外地址</th><th>健康</th><th>启用</th><th>browser_count</th><th>node_max_concurrency</th><th>effective_capacity</th><th>活跃线程</th><th>空闲线程</th><th>心跳延迟(s)</th><th>异常原因</th><th>权重</th><th>最近心跳</th><th>操作</th></tr></thead><tbody id="clusterNodesTable"></tbody></table></div>
+          <div class="table-wrap cluster-wrap"><table class="cluster-table"><thead><tr><th>ID</th><th>节点名</th><th>子节点对外地址</th><th>健康</th><th>启用</th><th>浏览器容量</th><th>节点并发上限</th><th>有效容量</th><th>活跃线程</th><th>空闲线程</th><th>心跳延迟(s)</th><th>异常原因</th><th>权重</th><th>最近心跳</th><th>操作</th></tr></thead><tbody id="clusterNodesTable"></tbody></table></div>
         </section>
       </div>
 
@@ -1007,7 +1164,12 @@
           const ageNumber = Number(it.heartbeat_age_seconds);
           const ageClass = resolveHeartbeatBadgeClass(ageNumber);
           const ageText = Number.isFinite(ageNumber) ? String(ageNumber) : "-";
-          tr.innerHTML = `<td>${it.id}</td><td>${esc(it.node_name || "-")}</td><td class="mono">${esc(it.base_url || "-")}</td><td><span class="status-badge ${healthClass}">${healthText}</span></td><td><input type="checkbox" data-node-id="${it.id}" data-node-key="enabled" ${it.enabled ? "checked" : ""} /></td><td class="mono">${it.browser_count ?? "-"}</td><td class="mono">${it.node_max_concurrency ?? "-"}</td><td class="mono"><strong>${it.effective_capacity ?? it.thread_total ?? "-"}</strong></td><td>${it.thread_active ?? "-"}</td><td>${it.thread_idle ?? "-"}</td><td><span class="status-badge ${ageClass}">${ageText}</span></td><td><span class="status-badge ${reasonClass} reason-badge">${esc(it.health_reason || "-")}</span></td><td><input class="input-mini mono" data-node-id="${it.id}" data-node-key="weight" value="${it.weight ?? 100}" /></td><td>${it.last_heartbeat_at || "-"}</td><td><div class="actions" style="margin-top:0"><button class="secondary" data-action="detail-node" data-id="${it.id}">详情</button><button class="secondary" data-action="save-node" data-id="${it.id}">保存</button><button class="warn" data-action="delete-node" data-id="${it.id}">删除</button></div></td>`;
+          const effectiveCapacity = it.effective_capacity ?? it.thread_total ?? "-";
+          const threadActive = it.thread_active ?? "-";
+          const threadIdle = it.thread_idle ?? "-";
+          const lastHeartbeatText = esc(it.last_heartbeat_at || "-");
+          const lastHeartbeatHtml = lastHeartbeatText === "-" ? "-" : lastHeartbeatText.replace(" ", "<br/>");
+          tr.innerHTML = `<td><span class="node-id mono">#${it.id}</span></td><td><div class="node-name">${esc(it.node_name || "-")}</div></td><td class="mono node-url">${esc(it.base_url || "-")}</td><td><span class="status-badge ${healthClass}">${healthText}</span></td><td><input type="checkbox" data-node-id="${it.id}" data-node-key="enabled" ${it.enabled ? "checked" : ""} /></td><td><span class="metric-chip mono">${it.browser_count ?? "-"}</span></td><td><span class="metric-chip mono">${it.node_max_concurrency ?? "-"}</span></td><td><span class="metric-chip strong mono">${effectiveCapacity}</span></td><td><span class="metric-chip active mono">${threadActive}</span></td><td><span class="metric-chip idle mono">${threadIdle}</span></td><td><span class="status-badge ${ageClass}">${ageText}</span></td><td><span class="status-badge ${reasonClass} reason-badge">${esc(it.health_reason || "-")}</span></td><td><input class="input-mini mono" data-node-id="${it.id}" data-node-key="weight" value="${it.weight ?? 100}" /></td><td><div class="time-cell">${lastHeartbeatHtml}</div></td><td><div class="cluster-actions"><button class="secondary" data-action="detail-node" data-id="${it.id}">详情</button><button class="secondary" data-action="save-node" data-id="${it.id}">保存</button><button class="warn" data-action="delete-node" data-id="${it.id}">删除</button></div></td>`;
           b.appendChild(tr);
         }
       };
