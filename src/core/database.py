@@ -102,7 +102,7 @@ class Database:
                 """
                 CREATE TABLE IF NOT EXISTS cluster_nodes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    node_name TEXT NOT NULL UNIQUE,
+                    node_name TEXT NOT NULL,
                     base_url TEXT NOT NULL,
                     node_api_key TEXT NOT NULL,
                     enabled BOOLEAN DEFAULT 1,
@@ -119,15 +119,77 @@ class Database:
                 """
             )
 
+            # 历史版本把 node_name 设为 UNIQUE，会导致同名子节点覆盖；这里统一迁移为非唯一。
+            await self._migrate_cluster_nodes_schema(db)
+
             await db.execute("CREATE INDEX IF NOT EXISTS idx_captcha_jobs_created_at ON captcha_jobs(created_at DESC)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_captcha_jobs_status ON captcha_jobs(status)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_service_api_keys_enabled ON service_api_keys(enabled)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_cluster_nodes_enabled ON cluster_nodes(enabled)")
             await db.execute("CREATE INDEX IF NOT EXISTS idx_cluster_nodes_heartbeat ON cluster_nodes(last_heartbeat_at DESC)")
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_cluster_nodes_base_url ON cluster_nodes(base_url)")
 
             await db.commit()
 
         await self._ensure_defaults()
+
+    async def _migrate_cluster_nodes_schema(self, db: aiosqlite.Connection):
+        cursor = await db.execute("PRAGMA index_list(cluster_nodes)")
+        indexes = await cursor.fetchall()
+
+        has_node_name_unique = False
+        for idx in indexes:
+            idx_name = idx[1]
+            is_unique = bool(idx[2])
+            if not is_unique:
+                continue
+
+            idx_cursor = await db.execute(f"PRAGMA index_info('{idx_name}')")
+            idx_columns = await idx_cursor.fetchall()
+            if len(idx_columns) == 1 and str(idx_columns[0][2] or "") == "node_name":
+                has_node_name_unique = True
+                break
+
+        if not has_node_name_unique:
+            return
+
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS cluster_nodes_v2 (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                node_name TEXT NOT NULL,
+                base_url TEXT NOT NULL,
+                node_api_key TEXT NOT NULL,
+                enabled BOOLEAN DEFAULT 1,
+                healthy BOOLEAN DEFAULT 1,
+                active_sessions INTEGER DEFAULT 0,
+                cached_sessions INTEGER DEFAULT 0,
+                max_concurrency INTEGER DEFAULT 1,
+                weight INTEGER DEFAULT 100,
+                last_heartbeat_at TIMESTAMP,
+                last_error TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
+        await db.execute(
+            """
+            INSERT INTO cluster_nodes_v2 (
+                id, node_name, base_url, node_api_key, enabled, healthy,
+                active_sessions, cached_sessions, max_concurrency, weight,
+                last_heartbeat_at, last_error, created_at, updated_at
+            )
+            SELECT
+                id, node_name, base_url, node_api_key, enabled, healthy,
+                active_sessions, cached_sessions, max_concurrency, weight,
+                last_heartbeat_at, last_error, created_at, updated_at
+            FROM cluster_nodes
+            ORDER BY id ASC
+            """
+        )
+        await db.execute("DROP TABLE cluster_nodes")
+        await db.execute("ALTER TABLE cluster_nodes_v2 RENAME TO cluster_nodes")
 
     async def _ensure_defaults(self):
         async with aiosqlite.connect(self.db_path) as db:
@@ -571,7 +633,10 @@ class Database:
 
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
-            cursor = await db.execute("SELECT id FROM cluster_nodes WHERE node_name = ?", (normalized_name,))
+            cursor = await db.execute(
+                "SELECT id FROM cluster_nodes WHERE base_url = ? ORDER BY id ASC LIMIT 1",
+                (normalized_url,),
+            )
             row = await cursor.fetchone()
 
             if row:
@@ -579,13 +644,13 @@ class Database:
                 await db.execute(
                     """
                     UPDATE cluster_nodes
-                    SET base_url = ?, node_api_key = ?, weight = ?, max_concurrency = ?,
+                    SET node_name = ?, node_api_key = ?, weight = ?, max_concurrency = ?,
                         active_sessions = ?, cached_sessions = ?, healthy = ?,
                         last_heartbeat_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
                     WHERE id = ?
                     """,
                     (
-                        normalized_url,
+                        normalized_name,
                         node_api_key,
                         max(1, int(weight)),
                         max(1, int(max_concurrency)),
@@ -618,6 +683,10 @@ class Database:
                 )
                 node_id = int(cursor.lastrowid)
 
+            await db.execute(
+                "DELETE FROM cluster_nodes WHERE base_url = ? AND id <> ?",
+                (normalized_url, node_id),
+            )
             await db.commit()
 
         node = await self.get_cluster_node(node_id)
@@ -636,30 +705,42 @@ class Database:
         normalized_name = node_name.strip()
         normalized_url = base_url.strip().rstrip("/")
         async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
             cursor = await db.execute(
+                "SELECT id FROM cluster_nodes WHERE base_url = ? ORDER BY id ASC LIMIT 1",
+                (normalized_url,),
+            )
+            row = await cursor.fetchone()
+            if not row:
+                return None
+
+            node_id = int(row["id"])
+            await db.execute(
                 """
                 UPDATE cluster_nodes
-                SET base_url = ?,
+                SET node_name = ?,
                     active_sessions = ?,
                     cached_sessions = ?,
                     healthy = ?,
                     last_heartbeat_at = CURRENT_TIMESTAMP,
                     updated_at = CURRENT_TIMESTAMP
-                WHERE node_name = ?
+                WHERE id = ?
                 """,
                 (
-                    normalized_url,
+                    normalized_name,
                     max(0, int(active_sessions)),
                     max(0, int(cached_sessions)),
                     1 if healthy else 0,
-                    normalized_name,
+                    node_id,
                 ),
             )
+            await db.execute(
+                "DELETE FROM cluster_nodes WHERE base_url = ? AND id <> ?",
+                (normalized_url, node_id),
+            )
             await db.commit()
-            if cursor.rowcount <= 0:
-                return None
 
-        return await self.get_cluster_node_by_name(normalized_name)
+        return await self.get_cluster_node(node_id)
 
     async def list_cluster_nodes(self) -> List[Dict[str, Any]]:
         async with aiosqlite.connect(self.db_path) as db:
@@ -687,6 +768,17 @@ class Database:
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             cursor = await db.execute("SELECT * FROM cluster_nodes WHERE node_name = ?", (node_name,))
+            row = await cursor.fetchone()
+            return dict(row) if row else None
+
+    async def get_cluster_node_by_base_url(self, base_url: str) -> Optional[Dict[str, Any]]:
+        normalized_url = base_url.strip().rstrip("/")
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
+                "SELECT * FROM cluster_nodes WHERE base_url = ? ORDER BY id ASC LIMIT 1",
+                (normalized_url,),
+            )
             row = await cursor.fetchone()
             return dict(row) if row else None
 
