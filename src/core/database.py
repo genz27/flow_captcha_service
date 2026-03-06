@@ -730,7 +730,7 @@ class Database:
                         reported_browser_count, reported_node_max_concurrency, weight,
                         last_heartbeat_at
                     )
-                    VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    VALUES (?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
                     """,
                     (
                         normalized_name,
