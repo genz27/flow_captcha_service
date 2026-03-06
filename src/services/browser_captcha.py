@@ -330,7 +330,7 @@ class TokenBrowser:
     
     每次都是新的随机 UA，避免长时间运行导致的各种问题
     """
-    # UA ???? 2026-03-01?????????? score >= 0.3 ? UA?
+    # UA 池更新于 2026-03-01，覆盖更多真实设备与 score >= 0.3 的 UA。
     UA_LIST = [
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
@@ -445,7 +445,7 @@ class TokenBrowser:
         async with self._playwright_lock:
             if self._playwright is None:
                 self._playwright = await async_playwright().start()
-                debug_logger.log_info(f"[BrowserCaptcha] Token-{self.token_id} Playwright ???")
+                debug_logger.log_info(f"[BrowserCaptcha] Token-{self.token_id} Playwright 已预热")
             return self._playwright
 
     async def close_shared_playwright(self):
@@ -1490,12 +1490,12 @@ class BrowserCaptchaService:
         
         valid_success = gen_ok - api_403
         if valid_success < 0: valid_success = 0
-        
+        """获取或创建指定 ID 的浏览器实例"""
         rate = (valid_success / total * 100) if total > 0 else 0.0
 
     
     async def _get_or_create_browser(self, browser_id: int) -> TokenBrowser:
-        """??????? ID ??????"""
+        """è·åæåå»ºæå® ID çæµè§å¨å®ä¾"""
         async with self._browsers_lock:
             return await self._create_browser_slot_locked(browser_id)
 

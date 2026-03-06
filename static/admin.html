@@ -579,7 +579,7 @@
             <div class="card"><div id="statThreadTotalLabel" class="k">总线程数</div><div id="statThreadTotal" class="v">-</div></div>
             <div class="card"><div id="statThreadIdleLabel" class="k">空闲线程数</div><div id="statThreadIdle" class="v">-</div></div>
           </div>
-          <p id="clusterStatsHint" class="panel-desc hidden">??????????????? solve ????????=???????????=????-????????????/????????????</p>
+          <p id="clusterStatsHint" class="panel-desc hidden">统计口径说明：这里统计的是打码 solve 有效容量。总线程=有效容量总和；空闲线程=有效容量-活跃会话；不代表上游图片/视频生成并发或完成时间。</p>
           <div class="actions"><button id="refreshAllBtn" class="secondary">刷新数据</button><button id="logoutBtn" class="secondary">退出登录</button></div>
         </section>
       </div>
@@ -962,13 +962,13 @@
         q("statTotal").textContent = String(r.db?.jobs_total ?? "-");
         q("statEnabledKey").textContent = String(r.db?.api_key_enabled_total ?? "-");
         if (state.role === "master") {
-          q("statThreadTotalLabel").textContent = "???????solve ?????";
-          q("statThreadIdleLabel").textContent = "?????????solve ????-???";
+          q("statThreadTotalLabel").textContent = "集群打码线程（solve 有效容量）";
+          q("statThreadIdleLabel").textContent = "集群空闲打码线程（solve 有效容量-活跃）";
           q("statThreadTotal").textContent = String(r.cluster?.total_thread_capacity ?? "-");
           q("statThreadIdle").textContent = String(r.cluster?.total_idle_capacity ?? "-");
         } else {
-          q("statThreadTotalLabel").textContent = "???????solve ?????";
-          q("statThreadIdleLabel").textContent = "?????????solve ????-???";
+          q("statThreadTotalLabel").textContent = "本机打码线程（solve 有效容量）";
+          q("statThreadIdleLabel").textContent = "本机空闲打码线程（solve 有效容量-活跃）";
           q("statThreadTotal").textContent = String(r.runtime?.browser?.thread_total ?? "-");
           q("statThreadIdle").textContent = String(r.runtime?.browser?.thread_idle ?? "-");
         }
