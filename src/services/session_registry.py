@@ -3,13 +3,13 @@
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from typing import Callable, Dict, Optional, List
+from typing import Callable, Dict, Optional, List, Union
 
 
 @dataclass
 class SessionEntry:
     session_id: str
-    browser_id: int
+    browser_id: Union[int, str]
     api_key_id: int
     project_id: str
     action: str
@@ -27,7 +27,7 @@ class SessionRegistry:
     async def create(
         self,
         session_id: str,
-        browser_id: int,
+        browser_id: Union[int, str],
         api_key_id: int,
         project_id: str,
         action: str,
