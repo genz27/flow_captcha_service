@@ -122,7 +122,7 @@ class CaptchaRuntime:
             debug_logger.log_warning(f"[CaptchaRuntime] reload_browser_count failed: {e}")
 
     async def get_stats(self) -> Dict[str, Any]:
-        active_sessions = await self.registry.active_count()
+        pending_sessions = await self.registry.active_count()
         total_sessions = await self.registry.total_count()
 
         browser_stats: Dict[str, Any] = {
@@ -131,6 +131,8 @@ class CaptchaRuntime:
             "risk_403_count": 0,
             "browser_count": 0,
             "configured_browser_count": config.browser_count,
+            "busy_browser_count": 0,
+            "idle_browser_count": config.browser_count,
         }
 
         if self._browser_service is not None:
@@ -142,18 +144,21 @@ class CaptchaRuntime:
             try:
                 captcha_cfg = await self.db.get_captcha_config()
                 browser_stats["configured_browser_count"] = max(1, int(captcha_cfg.browser_count or 1))
+                browser_stats["idle_browser_count"] = browser_stats["configured_browser_count"]
             except Exception as e:
                 debug_logger.log_warning(f"[CaptchaRuntime] read browser_count from db failed: {e}")
 
         configured_count = max(1, int(browser_stats.get("configured_browser_count") or config.browser_count or 1))
+        busy_count = max(0, int(browser_stats.get("busy_browser_count") or 0))
         browser_stats["thread_total"] = configured_count
-        browser_stats["thread_idle"] = max(configured_count - active_sessions, 0)
-        browser_stats["thread_active"] = active_sessions
+        browser_stats["thread_idle"] = max(configured_count - busy_count, 0)
+        browser_stats["thread_active"] = busy_count
 
         return {
             "node_name": config.node_name,
             "role": config.cluster_role,
-            "active_sessions": active_sessions,
+            "active_sessions": busy_count,
+            "pending_sessions": pending_sessions,
             "cached_sessions": total_sessions,
             "local_solve_enabled": config.cluster_role != "master",
             "browser": browser_stats,
