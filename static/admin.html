@@ -6,29 +6,29 @@
   <title>flow_captcha_service 管理后台</title>
   <style>
     :root{
-      --bg:#edf2f8;
-      --panel:#ffffff;
-      --line:#d5dfeb;
-      --text:#0f172a;
-      --muted:#5b6676;
-      --primary:#0f172a;
-      --ok:#dcfce7;
-      --warn:#fef3c7;
-      --err:#fee2e2;
-      --shadow:0 10px 24px rgba(15,23,42,.06);
+      --bg:#08111f;
+      --panel:rgba(11,22,38,.92);
+      --line:rgba(148,163,184,.16);
+      --text:#e5eefb;
+      --muted:#9cb1ca;
+      --primary:#3b82f6;
+      --ok:rgba(34,197,94,.12);
+      --warn:rgba(245,158,11,.12);
+      --err:rgba(244,63,94,.12);
+      --shadow:0 20px 60px rgba(2,6,23,.36);
     }
     *{box-sizing:border-box}
     body{
       margin:0;
       color:var(--text);
       background:
-        radial-gradient(1200px 420px at -10% -20%, rgba(29,78,216,.18), transparent 56%),
-        radial-gradient(920px 340px at 110% -10%, rgba(14,116,144,.14), transparent 52%),
-        linear-gradient(180deg,#f7faff 0%,#edf2f8 56%,#eaf0f7 100%);
+        radial-gradient(1100px 480px at -10% -10%, rgba(59,130,246,.24), transparent 58%),
+        radial-gradient(900px 360px at 110% 0%, rgba(34,197,94,.12), transparent 54%),
+        linear-gradient(180deg,#08111f 0%,#0b1524 55%,#0d1728 100%);
       font-family:"HarmonyOS Sans SC","PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
       min-height:100vh;
     }
-    .container{width:min(1360px,96vw);margin:0 auto;padding:18px 0 36px}
+    .container{width:min(1560px,96vw);margin:0 auto;padding:18px 0 36px}
     .topbar{
       position:sticky;
       top:12px;
@@ -90,24 +90,122 @@
     }
     .nav-tabs{
       display:flex;
+      flex-direction:column;
       gap:8px;
-      flex-wrap:wrap;
-      margin-top:12px;
+      flex-wrap:nowrap;
+      margin-top:0;
+      padding:22px 16px 16px;
+      border:1px solid rgba(15,23,42,.08);
+      border-radius:22px;
+      background:
+        linear-gradient(180deg,rgba(15,23,42,.96) 0%,rgba(30,41,59,.96) 100%);
+      box-shadow:0 20px 42px rgba(15,23,42,.16);
     }
-    .nav-tab{
-      border:1px solid #cbd5e1;
-      border-radius:999px;
-      padding:8px 14px;
+    #dashboardNav{
+      position:sticky;
+      top:92px;
+      align-self:start;
+    }
+    #dashboardNav::before{
+      content:"控制导航\A按角色展示可用模块";
+      white-space:pre-line;
+      display:block;
+      margin-bottom:10px;
+      padding:0 4px 14px;
+      border-bottom:1px solid rgba(148,163,184,.18);
+      color:rgba(226,232,240,.82);
       font-size:12px;
-      color:#0f172a;
-      background:#fff;
-      cursor:pointer;
+      line-height:1.75;
+      letter-spacing:.08em;
       font-weight:700;
     }
+    .nav-group{
+      display:grid;
+      gap:6px;
+    }
+    .nav-group + .nav-group{
+      margin-top:2px;
+      padding-top:10px;
+      border-top:1px solid rgba(148,163,184,.16);
+    }
+    .nav-group-label{
+      padding:0 2px;
+      font-size:10px;
+      color:rgba(156,177,202,.72);
+      letter-spacing:.12em;
+      font-weight:700;
+      text-transform:none;
+    }
+    .nav-tab{
+      display:flex;
+      align-items:center;
+      justify-content:flex-start;
+      gap:9px;
+      width:100%;
+      border:1px solid rgba(148,163,184,.14);
+      border-radius:13px;
+      padding:10px 12px;
+      min-height:42px;
+      font-size:12px;
+      color:#dbe4ef;
+      background:rgba(12,24,42,.48);
+      cursor:pointer;
+      font-weight:700;
+      transition:background .16s ease,border-color .16s ease,box-shadow .16s ease,color .16s ease;
+      text-align:left;
+    }
+    .nav-tab::before{
+      content:"";
+      width:7px;
+      height:7px;
+      border-radius:999px;
+      background:rgba(148,163,184,.42);
+      flex:none;
+    }
+    .nav-main{
+      flex:1;
+      font-size:12px;
+      line-height:1.2;
+    }
+    .nav-meta{
+      display:none;
+    }
+    .nav-tab:hover{
+      border-color:rgba(96,165,250,.26);
+      background:rgba(17,36,62,.7);
+    }
     .nav-tab.active{
-      color:#fff;
-      background:linear-gradient(120deg,#0f172a,#1e293b);
-      border-color:transparent;
+      color:#f8fbff;
+      background:rgba(37,99,235,.18);
+      border-color:rgba(96,165,250,.38);
+      box-shadow:inset 0 0 0 1px rgba(96,165,250,.22);
+    }
+    .nav-tab.active::before{
+      background:#60a5fa;
+    }
+    .sidebar-summary{
+      margin-top:10px;
+      padding:10px 2px 0;
+      border-top:1px solid rgba(148,163,184,.18);
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px 10px;
+    }
+    .sidebar-summary .summary-label{
+      font-size:10px;
+      letter-spacing:.08em;
+      color:rgba(156,177,202,.64);
+      font-weight:700;
+    }
+    .sidebar-summary .summary-value{
+      margin-top:4px;
+      font-size:12px;
+      color:#f8fafc;
+      font-weight:700;
+      line-height:1.4;
+    }
+    .sidebar-summary .summary-note{
+      display:none;
     }
     .panel{
       background:var(--panel);
@@ -421,8 +519,175 @@
     .status-badge.err{color:#991b1b;border-color:#fecaca;background:#fee2e2}
     .status-badge.warn{color:#92400e;border-color:#fcd34d;background:#fef3c7}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace}
-    .page{display:none}
+    .page{
+      display:none;
+      grid-column:2;
+      grid-row:2;
+      min-width:0;
+    }
     .page.active{display:block}
+    .workspace-head{
+      grid-column:2;
+      grid-row:1;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 22px;
+      border:1px solid rgba(203,213,225,.9);
+      border-radius:20px;
+      background:
+        radial-gradient(560px 180px at 0% 0%, rgba(37,99,235,.14), transparent 72%),
+        linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      box-shadow:0 16px 32px rgba(15,23,42,.08);
+    }
+    .workspace-copy{min-width:0}
+    .workspace-breadcrumb{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:8px;
+      font-size:12px;
+      color:#64748b;
+      font-weight:600;
+    }
+    .workspace-breadcrumb::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:#2563eb;
+      box-shadow:0 0 0 6px rgba(37,99,235,.12);
+      flex:none;
+    }
+    .workspace-eyebrow{
+      display:inline-flex;
+      align-items:center;
+      padding:5px 11px;
+      border-radius:999px;
+      border:1px solid #bfdbfe;
+      background:#eff6ff;
+      color:#1d4ed8;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+    }
+    .workspace-title{
+      margin:10px 0 0;
+      font-size:30px;
+      line-height:1.08;
+      color:#0f172a;
+      letter-spacing:.2px;
+    }
+    .workspace-desc{
+      margin:10px 0 0;
+      font-size:13px;
+      color:#5b6676;
+      line-height:1.8;
+      max-width:760px;
+    }
+    .workspace-meta{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      min-width:280px;
+    }
+    .workspace-meta-item{
+      padding:12px 14px;
+      border-radius:16px;
+      border:1px solid #dbe7f5;
+      background:#fff;
+    }
+    .workspace-meta-item .label{
+      font-size:11px;
+      color:#64748b;
+      letter-spacing:.08em;
+      font-weight:700;
+    }
+    .workspace-meta-item .value{
+      margin-top:6px;
+      font-size:14px;
+      color:#0f172a;
+      font-weight:800;
+      line-height:1.4;
+    }
+    .panel-toolbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-bottom:12px;
+    }
+    .panel-toolbar.compact{
+      margin-bottom:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid #e8eef6;
+    }
+    .toolbar-copy{
+      min-width:0;
+      display:grid;
+      gap:6px;
+    }
+    .toolbar-kicker{
+      font-size:11px;
+      color:#2563eb;
+      letter-spacing:.08em;
+      font-weight:700;
+      text-transform:uppercase;
+    }
+    .toolbar-title{
+      font-size:17px;
+      color:#0f172a;
+      font-weight:800;
+      line-height:1.3;
+    }
+    .toolbar-desc{
+      font-size:12px;
+      color:#64748b;
+      line-height:1.75;
+    }
+    .toolbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .panel-toolbar .actions,
+    .toolbar-right .actions{
+      margin-top:0;
+    }
+    .toolbar-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:7px 12px;
+      border-radius:999px;
+      border:1px solid #cfe0ef;
+      background:#f8fbff;
+      color:#35506f;
+      font-size:12px;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .table-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      margin:12px 0 10px;
+      padding:10px 12px;
+      border:1px solid #dbe7f5;
+      border-radius:14px;
+      background:linear-gradient(180deg,#fbfdff,#f6faff);
+    }
+    .table-toolbar .toolbar-note{
+      font-size:12px;
+      color:#64748b;
+      line-height:1.7;
+    }
     .drawer-backdrop{
       position:fixed;
       inset:0;
@@ -486,7 +751,14 @@
       background:#fff;
     }
     .hidden{display:none!important}
-    #dashboard{display:none}
+    #dashboard{
+      display:none;
+      margin-top:18px;
+      grid-template-columns:minmax(230px,260px) minmax(0,1fr);
+      gap:20px;
+      align-items:start;
+    }
+    .page>.panel:first-child{margin-top:0}
     #loginPanel{
       max-width:680px;
       margin:24px auto 0;
@@ -579,6 +851,48 @@
     }
     .modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
     @keyframes toast-in{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+    @media (max-width:1180px){
+      #dashboard{
+        grid-template-columns:1fr;
+      }
+      #dashboardNav{
+        position:static;
+      }
+      #dashboardNav::before{
+        content:none;
+      }
+      .nav-tabs{
+        flex-direction:row;
+        flex-wrap:wrap;
+        padding:12px;
+      }
+      .nav-group{
+        min-width:min(240px,100%);
+        flex:1 1 240px;
+      }
+      .nav-group + .nav-group{
+        margin-top:0;
+        padding-top:0;
+        border-top:none;
+      }
+      .nav-tab{
+        width:100%;
+        min-width:0;
+      }
+      .workspace-head{
+        grid-column:auto;
+        grid-row:auto;
+        flex-direction:column;
+      }
+      .workspace-meta{
+        width:100%;
+        min-width:0;
+      }
+      .page{
+        grid-column:auto;
+        grid-row:auto;
+      }
+    }
     @media (max-width:1000px){
       .title{font-size:27px}
       .grid,.cards{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -594,6 +908,10 @@
       .title{font-size:22px}
       .grid,.cards,.login-grid{grid-template-columns:1fr}
       .drawer-grid{grid-template-columns:1fr}
+      .nav-tabs{padding:10px}
+      .workspace-title{font-size:24px}
+      .workspace-meta{grid-template-columns:1fr}
+      .panel-toolbar,.table-toolbar{align-items:stretch}
       .cluster-kpis,.cluster-toolbar,.cluster-base{grid-template-columns:1fr}
       .overview-charts{grid-template-columns:1fr}
       .pager{align-items:stretch}
@@ -603,6 +921,424 @@
       .login-hero{padding:16px}
       .login-hero h2{font-size:21px}
       .login-body{padding:14px 16px 16px}
+    }
+
+    .sidebar-head{
+      width:100%;
+      display:grid;
+      gap:8px;
+      padding:2px 2px 12px;
+      border-bottom:1px solid rgba(148,163,184,.14);
+    }
+    .sidebar-kicker{
+      font-size:10px;
+      letter-spacing:.14em;
+      text-transform:none;
+      color:rgba(156,177,202,.78);
+      font-weight:700;
+    }
+    .sidebar-title{
+      margin:2px 0 0;
+      font-size:23px;
+      line-height:1.05;
+      color:#f8fbff;
+      letter-spacing:.2px;
+    }
+    .sidebar-desc{
+      margin:2px 0 0;
+      font-size:11px;
+      line-height:1.4;
+      color:var(--muted);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .sidebar-repo{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      width:fit-content;
+      max-width:100%;
+      margin-top:0;
+      padding:5px 10px;
+      border-radius:999px;
+      border:1px solid rgba(148,163,184,.16);
+      background:rgba(15,23,42,.56);
+      color:#cfe0ff;
+      font-size:10px;
+      font-weight:700;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .sidebar-head-actions{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:6px;
+      align-items:stretch;
+    }
+    .sidebar-head-actions .portal-link{
+      order:1;
+      width:100%;
+    }
+    .sidebar-role-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:flex-start;
+      order:3;
+      grid-column:1 / -1;
+      padding:8px 10px;
+      border-radius:12px;
+      border:1px solid rgba(96,165,250,.18);
+      background:rgba(14,30,52,.74);
+      color:#dbeafe;
+      font-size:10px;
+      font-weight:700;
+      white-space:nowrap;
+      line-height:1.2;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    #sidebarLogoutBtn{
+      order:2;
+      width:100%;
+    }
+
+    .topbar,
+    #loginPanel,
+    .panel,
+    .card,
+    .workspace-head,
+    .workspace-meta-item,
+    .table-toolbar,
+    .cluster-wrap,
+    .cluster-kpi,
+    .cluster-result,
+    .overview-chart,
+    .chart-host,
+    .drawer,
+    .timeline-item,
+    .modal-card{
+      border-color:var(--line);
+      background:linear-gradient(180deg,rgba(11,22,38,.96),rgba(11,22,38,.9));
+      box-shadow:var(--shadow);
+    }
+    .topbar{
+      background:
+        radial-gradient(560px 180px at 0% 0%, rgba(59,130,246,.14), transparent 72%),
+        linear-gradient(180deg,rgba(11,22,38,.95),rgba(11,22,38,.88));
+    }
+    .nav-tabs{
+      border-color:rgba(148,163,184,.16);
+      background:
+        radial-gradient(760px 260px at 0% 0%, rgba(59,130,246,.16), transparent 72%),
+        linear-gradient(180deg,#08111f 0%,#0b1524 48%,#0d1728 100%);
+      box-shadow:var(--shadow);
+    }
+    .login-hero,
+    .modal-head,
+    .drawer-head{
+      border-color:rgba(148,163,184,.12);
+      background:
+        radial-gradient(560px 180px at 0% 0%, rgba(59,130,246,.14), transparent 72%),
+        linear-gradient(180deg,rgba(11,22,38,.95),rgba(11,22,38,.88));
+    }
+    .title,
+    .workspace-title,
+    .toolbar-title,
+    .panel h2,
+    .card .v,
+    .cluster-kpi .v,
+    .modal-head h3,
+    .drawer-head h3,
+    .workspace-meta-item .value,
+    .node-name,
+    .status-badge,
+    .table-toolbar .toolbar-note strong{
+      color:#f8fbff;
+    }
+    .subtitle,
+    .panel-desc,
+    .toolbar-desc,
+    .toolbar-note,
+    .workspace-desc,
+    .workspace-breadcrumb,
+    .workspace-meta-item .label,
+    .inline-note,
+    .pager-info,
+    .field .hint,
+    .cluster-kpi .k,
+    .cluster-kpi .s,
+    .cluster-result,
+    .summary-label,
+    .summary-note,
+    .modal-meta,
+    .time-cell,
+    .overview-chart .k,
+    .chart-empty{
+      color:var(--muted);
+    }
+    .field label,
+    .checkbox-line{
+      color:#dbeafe;
+    }
+    .role-badge,
+    .toolbar-badge,
+    .workspace-eyebrow{
+      color:#dbeafe;
+      border-color:rgba(96,165,250,.18);
+      background:rgba(59,130,246,.12);
+    }
+    .portal-link{
+      color:#dbeafe;
+      border-color:rgba(148,163,184,.18);
+      background:rgba(15,23,42,.58);
+      padding:8px 10px;
+      border-radius:12px;
+      font-size:11px;
+      font-weight:700;
+    }
+    button{
+      color:#fff;
+      background:linear-gradient(135deg,#2563eb,#3b82f6);
+      box-shadow:0 12px 28px rgba(37,99,235,.25);
+    }
+    button.secondary{
+      color:#dbeafe;
+      border-color:rgba(148,163,184,.18);
+      background:rgba(15,23,42,.58);
+      box-shadow:none;
+      border-radius:12px;
+      padding:8px 10px;
+      font-size:11px;
+    }
+    button.warn{
+      background:linear-gradient(135deg,#c2410c,#ea580c);
+    }
+    .field input,
+    .field select,
+    .field textarea,
+    .input-mini,
+    .code-preview{
+      border-color:rgba(148,163,184,.16);
+      background:rgba(8,17,32,.6);
+      color:#f8fafc;
+    }
+    .field input::placeholder,
+    .field textarea::placeholder{
+      color:rgba(156,177,202,.72);
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus{
+      border-color:rgba(96,165,250,.48);
+      box-shadow:0 0 0 4px rgba(96,165,250,.12);
+    }
+    .code-preview{
+      background:rgba(8,17,32,.72);
+    }
+    details.advanced{
+      border-color:rgba(148,163,184,.18);
+      background:rgba(8,17,32,.46);
+    }
+    details.advanced>summary{
+      color:#dbeafe;
+    }
+    .card .k,
+    .toolbar-kicker,
+    .nav-group-label{
+      color:rgba(184,200,221,.82);
+    }
+    th,
+    td{
+      border-bottom-color:rgba(148,163,184,.1);
+    }
+    th{
+      color:#b8c8dd;
+      background:rgba(15,23,42,.5);
+    }
+    td{
+      color:var(--text);
+    }
+    .cluster-panel{
+      background:
+        radial-gradient(640px 200px at 0% 0%, rgba(59,130,246,.16), transparent 70%),
+        linear-gradient(180deg,rgba(11,22,38,.96),rgba(11,22,38,.9));
+    }
+    .cluster-table th{
+      background:rgba(15,23,42,.82);
+      color:#cfe0ff;
+    }
+    .cluster-table tbody tr:nth-child(even){
+      background:rgba(148,163,184,.03);
+    }
+    .cluster-table tbody tr:hover{
+      background:rgba(59,130,246,.08);
+    }
+    .node-id,
+    .metric-chip,
+    .toolbar-badge{
+      border-color:rgba(148,163,184,.16);
+      background:rgba(8,17,32,.52);
+      color:#e5eefb;
+    }
+    .metric-chip.strong{
+      border-color:rgba(96,165,250,.28);
+      background:rgba(59,130,246,.16);
+      color:#dbeafe;
+    }
+    .metric-chip.active{
+      border-color:rgba(251,113,133,.28);
+      background:rgba(244,63,94,.14);
+      color:#ffe4e6;
+    }
+    .metric-chip.idle{
+      border-color:rgba(74,222,128,.28);
+      background:rgba(34,197,94,.14);
+      color:#dcfce7;
+    }
+    .status-badge{
+      border-color:rgba(148,163,184,.18);
+      background:rgba(15,23,42,.58);
+      color:#dbeafe;
+    }
+    .status-badge.ok{color:#dcfce7;border-color:rgba(74,222,128,.28);background:rgba(34,197,94,.14)}
+    .status-badge.err{color:#ffe4e6;border-color:rgba(251,113,133,.28);background:rgba(244,63,94,.14)}
+    .status-badge.warn{color:#fef3c7;border-color:rgba(251,191,36,.28);background:rgba(245,158,11,.14)}
+    .notice.ok{background:rgba(34,197,94,.12);border-color:rgba(74,222,128,.24);color:#dcfce7}
+    .notice.warn{background:rgba(245,158,11,.12);border-color:rgba(251,191,36,.24);color:#fef3c7}
+    .notice.err{background:rgba(244,63,94,.12);border-color:rgba(251,113,133,.24);color:#ffe4e6}
+
+    body.admin-authenticated{
+      overflow:auto;
+    }
+    body.admin-authenticated .container{
+      width:100%;
+      max-width:none;
+      margin:0;
+      padding:0;
+    }
+    body.admin-authenticated .topbar{
+      display:none;
+    }
+    body.admin-authenticated #notice,
+    body.admin-authenticated #envNotice{
+      position:fixed;
+      top:18px;
+      right:18px;
+      z-index:1100;
+      width:min(360px,calc(100vw - 36px));
+      margin:0;
+    }
+    body.admin-authenticated #dashboard{
+      margin-top:0;
+      min-height:100vh;
+      min-height:100dvh;
+      grid-template-columns:minmax(244px,272px) minmax(0,1fr);
+      grid-template-rows:auto minmax(0,1fr);
+      gap:0;
+      background:rgba(8,17,32,.34);
+      overflow:visible;
+    }
+    body.admin-authenticated #dashboardNav{
+      grid-column:1;
+      grid-row:1 / span 2;
+      position:relative;
+      top:0;
+      align-self:stretch;
+      min-height:100vh;
+      min-height:100dvh;
+      padding:18px 12px 14px;
+      border:none;
+      border-right:1px solid rgba(148,163,184,.12);
+      border-radius:0;
+      box-shadow:none;
+      min-width:0;
+      overflow:visible;
+      gap:10px;
+    }
+    body.admin-authenticated #dashboardNav::before{
+      content:none;
+    }
+    body.admin-authenticated .nav-group,
+    body.admin-authenticated .sidebar-summary{
+      width:100%;
+    }
+    body.admin-authenticated .sidebar-summary{
+      margin-top:auto;
+      padding-top:12px;
+      border-top:1px solid rgba(148,163,184,.14);
+    }
+    body.admin-authenticated .sidebar-summary .summary-note{
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    body.admin-authenticated .workspace-head{
+      grid-column:2;
+      grid-row:1;
+      margin:0;
+      padding:22px 24px 20px;
+      border:none;
+      border-bottom:1px solid rgba(148,163,184,.1);
+      border-radius:0;
+      box-shadow:none;
+      background:
+        radial-gradient(860px 220px at 100% 0%, rgba(59,130,246,.08), transparent 72%),
+        linear-gradient(180deg,rgba(8,17,32,.92),rgba(13,23,40,.88));
+    }
+    body.admin-authenticated .page{
+      grid-column:2;
+      grid-row:2;
+      margin:0;
+      min-width:0;
+      padding:22px 24px 36px;
+      overflow:visible;
+      background:
+        radial-gradient(860px 220px at 100% 0%, rgba(59,130,246,.08), transparent 72%),
+        linear-gradient(180deg,rgba(8,17,32,.92),rgba(13,23,40,.88));
+    }
+
+    @media (max-width:1180px){
+      body.admin-authenticated{
+        overflow:auto;
+      }
+      body.admin-authenticated #dashboard{
+        min-height:auto;
+        grid-template-columns:1fr;
+      }
+      body.admin-authenticated #dashboardNav{
+        grid-column:auto;
+        grid-row:auto;
+        min-height:auto;
+        border-right:none;
+        border-bottom:1px solid rgba(148,163,184,.12);
+      }
+      body.admin-authenticated .workspace-head,
+      body.admin-authenticated .page{
+        grid-column:auto;
+        grid-row:auto;
+      }
+      body.admin-authenticated .page{
+        padding:18px;
+        overflow:visible;
+      }
+      body.admin-authenticated #notice,
+      body.admin-authenticated #envNotice{
+        position:static;
+        width:auto;
+        margin:0 18px 12px;
+      }
+    }
+
+    @media (max-width:640px){
+      .sidebar-title{font-size:24px}
+      .sidebar-head-actions{align-items:stretch}
+      .sidebar-head-actions .portal-link,
+      .sidebar-head-actions .sidebar-role-pill,
+      .sidebar-head-actions button{width:100%;justify-content:center}
+      body.admin-authenticated .workspace-head{padding:18px 16px}
+      body.admin-authenticated .page{padding:16px}
     }
   </style>
 </head>
@@ -641,14 +1377,63 @@
 
     <div id="dashboard">
       <div id="dashboardNav" class="nav-tabs">
-        <button id="navOverview" class="nav-tab active" data-page="overview">概览</button>
-        <button id="navConfig" class="nav-tab" data-page="config">系统配置</button>
-        <button id="navCluster" class="nav-tab hidden" data-page="cluster">集群诊断</button>
-        <button id="navApiKeys" class="nav-tab hidden" data-page="apikeys">API Key</button>
-        <button id="navUsers" class="nav-tab hidden" data-page="users">用户</button>
-        <button id="navCdks" class="nav-tab hidden" data-page="cdks">CDK</button>
-        <button id="navLogs" class="nav-tab" data-page="logs">日志</button>
+        <div class="sidebar-head">
+          <div>
+            <div class="sidebar-kicker">管理后台</div>
+            <h2 class="sidebar-title">控制台</h2>
+            <p class="sidebar-desc">flow_captcha_service</p>
+            <a class="sidebar-repo" href="https://github.com/genz27/flow_captcha_service" target="_blank" rel="noreferrer" title="https://github.com/genz27/flow_captcha_service">GitHub</a>
+          </div>
+          <div class="sidebar-head-actions">
+            <a class="portal-link" href="/">公共页面</a>
+            <div id="sidebarRoleBadge" class="sidebar-role-pill">未登录</div>
+            <button id="sidebarLogoutBtn" class="secondary" type="button">退出登录</button>
+          </div>
+        </div>
+        <div id="navGroupCommon" class="nav-group">
+          <div class="nav-group-label">通用工作区</div>
+          <button id="navOverview" class="nav-tab active" data-page="overview"><span class="nav-main">概览</span><span class="nav-meta">查看运行状态与线程容量</span></button>
+          <button id="navConfig" class="nav-tab" data-page="config"><span class="nav-main">系统配置</span><span class="nav-meta">管理角色、参数与浏览器设置</span></button>
+          <button id="navLogs" class="nav-tab" data-page="logs"><span class="nav-main">日志</span><span class="nav-meta">分页查看调用记录与错误原因</span></button>
+        </div>
+        <div id="navGroupMaster" class="nav-group hidden">
+          <div class="nav-group-label">主节点专属</div>
+          <button id="navCluster" class="nav-tab hidden" data-page="cluster"><span class="nav-main">集群诊断</span><span class="nav-meta">跟踪节点健康、心跳与调度</span></button>
+          <button id="navApiKeys" class="nav-tab hidden" data-page="apikeys"><span class="nav-main">API Key</span><span class="nav-meta">维护主节点服务密钥</span></button>
+          <button id="navUsers" class="nav-tab hidden" data-page="users"><span class="nav-main">用户</span><span class="nav-meta">查看门户用户和额度使用</span></button>
+          <button id="navCdks" class="nav-tab hidden" data-page="cdks"><span class="nav-main">CDK</span><span class="nav-meta">生成、启停与分发兑换码</span></button>
+        </div>
+        <div class="sidebar-summary">
+          <div>
+            <div class="summary-label">当前角色</div>
+            <div id="sidebarRoleText" class="summary-value">未登录</div>
+          </div>
+          <div>
+            <div class="summary-label">当前模块</div>
+            <div id="sidebarPageText" class="summary-value">概览</div>
+          </div>
+          <div class="summary-note">主节点会显示集群、API Key、用户和 CDK。</div>
+        </div>
       </div>
+
+      <section id="workspaceHead" class="workspace-head">
+        <div class="workspace-copy">
+          <div id="workspaceBreadcrumb" class="workspace-breadcrumb">控制台 / 概览</div>
+          <div id="workspaceEyebrow" class="workspace-eyebrow">控制台</div>
+          <h2 id="workspaceTitle" class="workspace-title">控制台总览</h2>
+          <p id="workspaceDesc" class="workspace-desc">查看当前角色下可操作模块，并快速进入配置、诊断和日志工作区。</p>
+        </div>
+        <div class="workspace-meta">
+          <div class="workspace-meta-item">
+            <div class="label">当前角色</div>
+            <div id="workspaceRole" class="value">未登录</div>
+          </div>
+          <div class="workspace-meta-item">
+            <div class="label">活跃模块</div>
+            <div id="workspacePage" class="value">概览</div>
+          </div>
+        </div>
+      </section>
 
       <div id="pageOverview" class="page active">
         <section id="guidePanel" class="panel hidden">
@@ -779,6 +1564,10 @@
             <div class="field"><label>健康筛选</label><select id="clusterHealthFilter"><option value="all">全部</option><option value="healthy">仅健康</option><option value="abnormal">仅异常</option><option value="timeout">仅超时</option><option value="report_failed">仅上报失败</option><option value="auth_failed">仅认证失败</option><option value="disabled">仅已禁用</option></select></div>
             <div class="field"><label>最近刷新</label><input id="clusterLastUpdated" readonly placeholder="未刷新" /></div>
           </div>
+          <div class="table-toolbar">
+            <div id="clusterTableStat" class="toolbar-badge">节点数 0</div>
+            <div class="toolbar-note">支持按节点名、对外地址和异常原因筛选，并可直接在表格内维护权重与启用状态。</div>
+          </div>
           <div id="clusterResultHint" class="cluster-result">显示 0/0 个节点</div>
           <div class="table-wrap cluster-wrap"><table class="cluster-table"><thead><tr><th>ID</th><th>节点名</th><th>子节点对外地址</th><th>健康</th><th>启用</th><th>浏览器容量</th><th>节点并发上限</th><th>有效容量</th><th>活跃线程</th><th>空闲线程</th><th>心跳延迟(s)</th><th>异常原因</th><th>权重</th><th>最近心跳</th><th>操作</th></tr></thead><tbody id="clusterNodesTable"></tbody></table></div>
         </section>
@@ -786,31 +1575,62 @@
 
       <div id="pageApiKeys" class="page">
         <section id="masterApiKeyPanel" class="panel hidden">
-          <h2>主节点 API Key 管理</h2>
+          <div class="panel-toolbar compact">
+            <div class="toolbar-copy">
+              <div class="toolbar-kicker">Service Access</div>
+              <div class="toolbar-title">主节点 API Key 管理</div>
+              <div class="toolbar-desc">创建、启停并维护上游调用密钥额度，适合作为对接 `flow2api` 的服务入口。</div>
+            </div>
+            <div class="toolbar-right">
+              <div id="apiKeyTableStat" class="toolbar-badge">API Key 0</div>
+            </div>
+          </div>
           <div class="grid">
             <div class="field"><label>Key 名称</label><input id="newApiKeyName" placeholder="例如：flow2api-prod" /></div>
             <div class="field"><label>可用次数（留空=不限）</label><input id="newApiKeyQuota" type="number" min="0" /></div>
           </div>
           <div class="actions"><button id="createApiKeyBtn">创建 API Key</button><button id="refreshApiKeyBtn" class="secondary">刷新 API Key 列表</button></div>
           <div id="newApiKeyText" class="panel-desc"></div>
+          <div class="table-toolbar">
+            <div class="toolbar-note">支持在表格内直接修改名称、启用状态和剩余额度，保存后立即生效。</div>
+          </div>
           <div class="table-wrap"><table><thead><tr><th>ID</th><th>名称</th><th>Key 前缀</th><th>启用</th><th>剩余次数</th><th>已用次数</th><th>操作</th></tr></thead><tbody id="apiKeysTable"></tbody></table></div>
         </section>
       </div>
 
       <div id="pageUsers" class="page">
         <section id="portalUsersPanel" class="panel hidden">
-          <h2>终端用户管理</h2>
-          <p class="panel-desc">支持直接修改账号、显示名、密码、剩余次数、已用次数与启用状态。</p>
-          <div class="actions"><button id="refreshUsersBtn" class="secondary">刷新用户</button></div>
+          <div class="panel-toolbar compact">
+            <div class="toolbar-copy">
+              <div class="toolbar-kicker">Portal Users</div>
+              <div class="toolbar-title">终端用户管理</div>
+              <div class="toolbar-desc">支持直接修改账号、显示名、密码、剩余次数、已用次数与启用状态。</div>
+            </div>
+            <div class="toolbar-right">
+              <div id="usersTableStat" class="toolbar-badge">用户数 0</div>
+              <div class="actions"><button id="refreshUsersBtn" class="secondary">刷新用户</button></div>
+            </div>
+          </div>
           <div class="inline-note">密码留空表示不修改。次数按绝对值保存，便于直接修正账号状态。</div>
+          <div class="table-toolbar">
+            <div class="toolbar-note">适合快速修正用户启用状态、配额和密码，不需要切换到单独详情页。</div>
+          </div>
           <div class="table-wrap"><table><thead><tr><th>ID</th><th>账号</th><th>显示名</th><th>新密码</th><th>注册位置</th><th>启用</th><th>剩余次数</th><th>已用次数</th><th>最后登录</th><th>操作</th></tr></thead><tbody id="portalUsersTable"></tbody></table></div>
         </section>
       </div>
 
       <div id="pageCdks" class="page">
         <section id="portalCdksPanel" class="panel hidden">
-          <h2>CDK 批量生成与管理</h2>
-          <p class="panel-desc">每个 CDK 可自定义兑换次数；终端用户兑换后增加对应剩余打码次数。</p>
+          <div class="panel-toolbar compact">
+            <div class="toolbar-copy">
+              <div class="toolbar-kicker">Quota Issuing</div>
+              <div class="toolbar-title">CDK 批量生成与管理</div>
+              <div class="toolbar-desc">每个 CDK 可自定义兑换次数；终端用户兑换后增加对应剩余打码次数。</div>
+            </div>
+            <div class="toolbar-right">
+              <div id="cdkTableStat" class="toolbar-badge">CDK 0</div>
+            </div>
+          </div>
           <div class="grid">
             <div class="field"><label>批量数量</label><input id="cdkBatchCount" type="number" min="1" max="500" value="10" /></div>
             <div class="field"><label>每个 CDK 次数</label><input id="cdkQuotaTimes" type="number" min="1" value="10" /></div>
@@ -819,14 +1639,29 @@
           </div>
           <div class="actions"><button id="createCdksBtn">批量生成 CDK</button><button id="refreshCdksBtn" class="secondary">刷新 CDK 列表</button></div>
           <div id="newCdksText" class="panel-desc"></div>
+          <div class="table-toolbar">
+            <div class="toolbar-note">表格支持直接启停单个兑换码，批量生成结果会通过结果区和弹窗一起给出。</div>
+          </div>
           <div class="table-wrap"><table><thead><tr><th>ID</th><th>CDK</th><th>次数</th><th>前缀</th><th>备注</th><th>启用</th><th>兑换用户</th><th>兑换时间</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="portalCdksTable"></tbody></table></div>
         </section>
       </div>
 
       <div id="pageLogs" class="page">
         <section class="panel">
-          <h2>调用日志</h2>
-          <div class="actions"><button id="refreshLogsBtn" class="secondary">刷新日志</button></div>
+          <div class="panel-toolbar compact">
+            <div class="toolbar-copy">
+              <div class="toolbar-kicker">Audit Logs</div>
+              <div class="toolbar-title">调用日志</div>
+              <div class="toolbar-desc">用于按分页回看会话、项目、动作和错误原因，适合排查上游调用链问题。</div>
+            </div>
+            <div class="toolbar-right">
+              <div id="logsTableStat" class="toolbar-badge">日志 0</div>
+              <div class="actions"><button id="refreshLogsBtn" class="secondary">刷新日志</button></div>
+            </div>
+          </div>
+          <div class="table-toolbar">
+            <div class="toolbar-note">当前页只展示最近一段记录，可配合分页快速检查 solve、finish、error 的结果。</div>
+          </div>
           <div class="table-wrap"><table><thead><tr><th>时间</th><th>会话 ID</th><th>项目 ID</th><th>动作</th><th>状态</th><th>错误原因</th></tr></thead><tbody id="logsTable"></tbody></table></div>
           <div class="pager">
             <div id="logsPagerInfo" class="pager-info">第 1 页</div>
@@ -904,7 +1739,7 @@
         },
         revealedApiKeys: {},
       };
-      const roleTextMap = { master: "主节点（master）", subnode: "子节点（subnode）", standalone: "单机（standalone）", unknown: "未知" };
+      const roleTextMap = { master: "主节点（master）", subnode: "子节点（subnode）", standalone: "单机（standalone）", unknown: "未登录" };
       const q = (id) => document.getElementById(id);
       const toInt = (v, d) => Number.isFinite(Number(v)) ? Math.floor(Number(v)) : d;
       const toFloat = (v, d) => Number.isFinite(Number(v)) ? Number(v) : d;
@@ -923,6 +1758,50 @@
         users: "pageUsers",
         cdks: "pageCdks",
         logs: "pageLogs",
+      };
+      const pageMetaMap = {
+        overview: {
+          eyebrow: "运行概览",
+          title: "控制台总览",
+          desc: "集中查看当前角色、线程容量、会话状态和基础运行指标，适合先判断节点是否正常可用。",
+          shortTitle: "概览",
+        },
+        config: {
+          eyebrow: "系统设置",
+          title: "配置与角色管理",
+          desc: "维护后台账号、部署角色、超时参数以及浏览器运行配置，修改后按角色决定是否需要重启生效。",
+          shortTitle: "系统配置",
+        },
+        cluster: {
+          eyebrow: "集群调度",
+          title: "集群节点诊断",
+          desc: "查看子节点在线状态、容量、心跳延迟和异常原因，快速定位调度失败或节点不可用问题。",
+          shortTitle: "集群诊断",
+        },
+        apikeys: {
+          eyebrow: "服务接入",
+          title: "API Key 管理",
+          desc: "管理主节点服务 API Key 的启停、额度和分发，给上游业务接入提供稳定入口。",
+          shortTitle: "API Key",
+        },
+        users: {
+          eyebrow: "用户中心",
+          title: "门户用户管理",
+          desc: "查看门户账号状态、可用次数和账户信息，只在主节点模式下开放。",
+          shortTitle: "用户",
+        },
+        cdks: {
+          eyebrow: "额度发放",
+          title: "CDK 发码中心",
+          desc: "批量生成、停用和检查兑换码，用于门户用户次数充值和运营发放。",
+          shortTitle: "CDK",
+        },
+        logs: {
+          eyebrow: "审计记录",
+          title: "调用日志中心",
+          desc: "按分页查看 solve、finish、error 相关日志，适合回溯失败原因和排查调用链状态。",
+          shortTitle: "日志",
+        },
       };
 
       const showToast = (m, kind = "ok") => {
@@ -1044,10 +1923,23 @@
           if (!(el instanceof HTMLElement)) return;
           el.classList.toggle("active", el.dataset.page === target);
         });
+        const meta = pageMetaMap[target] || pageMetaMap.overview;
+        q("workspaceBreadcrumb").textContent = `后台首页 / ${meta.shortTitle}`;
+        q("workspaceEyebrow").textContent = meta.eyebrow;
+        q("workspaceTitle").textContent = meta.title;
+        q("workspaceDesc").textContent = meta.desc;
+        q("workspacePage").textContent = meta.shortTitle;
+        q("sidebarPageText").textContent = meta.shortTitle;
+      };
+      const setDashboardVisible = (visible) => {
+        q("dashboard").style.display = visible ? "grid" : "none";
+        q("loginPanel").classList.toggle("hidden", visible);
+        document.body.classList.toggle("admin-authenticated", visible);
       };
 
       const refreshNavByRole = () => {
         const isMaster = state.role === "master";
+        q("navGroupMaster").classList.toggle("hidden", !isMaster);
         q("navCluster").classList.toggle("hidden", !isMaster);
         q("navApiKeys").classList.toggle("hidden", !isMaster);
         q("navUsers").classList.toggle("hidden", !isMaster);
@@ -1069,9 +1961,8 @@
           localStorage.removeItem(TOKEN_STORAGE_KEY);
           closeResultModal();
           closeNodeDetailDrawer();
-          q("dashboard").style.display = "none";
-          q("loginPanel").classList.remove("hidden");
-          q("roleBadge").textContent = "当前角色：未登录";
+          setDashboardVisible(false);
+          applyRoleLayout("unknown");
         }
         if (!r.ok) throw new Error((p && p.detail) ? p.detail : `HTTP ${r.status}`);
         return p || {};
@@ -1081,6 +1972,9 @@
       const applyRoleLayout = (role) => {
         const real = role || "unknown";
         q("roleBadge").textContent = `当前角色：${roleTextMap[real] || real}`;
+        q("sidebarRoleBadge").textContent = roleTextMap[real] || real;
+        q("workspaceRole").textContent = roleTextMap[real] || real;
+        q("sidebarRoleText").textContent = roleTextMap[real] || real;
         state.role = real;
         const isMaster = real === "master";
         const isSubnode = real === "subnode";
@@ -1092,6 +1986,18 @@
         q("portalUsersPanel").classList.toggle("hidden", !isMaster);
         q("portalCdksPanel").classList.toggle("hidden", !isMaster);
         refreshNavByRole();
+      };
+      const performLogout = async () => {
+        try { if (state.token) await req("/api/admin/logout", { method: "POST" }); } catch (_) {}
+        state.token = "";
+        state.role = "unknown";
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        closeResultModal();
+        closeNodeDetailDrawer();
+        setActivePage("overview");
+        setDashboardVisible(false);
+        applyRoleLayout("unknown");
+        clearNotice();
       };
 
       const renderGuide = (guide) => {
@@ -1261,39 +2167,61 @@
           tr.innerHTML = `<td colspan="6" style="text-align:center;color:#64748b;padding:16px 8px">暂无日志记录</td>`;
           b.appendChild(tr);
         }
+        q("logsTableStat").textContent = `当前 ${items.length} / 总计 ${state.logs.total}`;
         renderLogsPager();
       };
       const loadApiKeys = async () => {
         if (state.role !== "master") return;
         const r = await req("/api/admin/apikeys");
+        const items = Array.isArray(r.items) ? r.items : [];
         const b = q("apiKeysTable"); b.innerHTML = "";
-        for (const it of (r.items || [])) {
+        for (const it of items) {
           const rawKey = getCachedApiKey(it.id);
           const copyTextLabel = rawKey ? "复制 Key" : "复制前缀";
           const tr = document.createElement("tr");
           tr.innerHTML = `<td>${it.id}</td><td><input data-ak-id="${it.id}" data-ak-key="name" value="${it.name || ""}" /></td><td>${it.key_prefix || "-"}</td><td><input type="checkbox" data-ak-id="${it.id}" data-ak-key="enabled" ${it.enabled ? "checked" : ""} /></td><td><input data-ak-id="${it.id}" data-ak-key="quota_remaining" value="${it.quota_remaining ?? ""}" /></td><td>${it.quota_used ?? 0}</td><td><div class="action-row"><button class="secondary" data-action="save-api-key" data-id="${it.id}">保存</button><button class="secondary" data-action="copy-api-key" data-id="${it.id}" data-prefix="${esc(it.key_prefix || "")}">${copyTextLabel}</button></div></td>`;
           b.appendChild(tr);
         }
+        if (!items.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="7" style="text-align:center;color:#64748b;padding:16px 8px">暂无 API Key</td>`;
+          b.appendChild(tr);
+        }
+        q("apiKeyTableStat").textContent = `API Key ${items.length}`;
       };
       const loadPortalUsers = async () => {
         if (state.role !== "master") return;
         const r = await req("/api/admin/users");
+        const items = Array.isArray(r.items) ? r.items : [];
         const b = q("portalUsersTable"); b.innerHTML = "";
-        for (const it of (r.items || [])) {
+        for (const it of items) {
           const tr = document.createElement("tr");
           tr.innerHTML = `<td>${it.id}</td><td><input data-user-id="${it.id}" data-user-key="username" value="${esc(it.username || "")}" /></td><td><input data-user-id="${it.id}" data-user-key="display_name" value="${esc(it.display_name || "")}" /></td><td><input type="password" data-user-id="${it.id}" data-user-key="new_password" placeholder="留空不修改" /></td><td>${esc(it.register_location || "-")}</td><td><input type="checkbox" data-user-id="${it.id}" data-user-key="enabled" ${it.enabled ? "checked" : ""} /></td><td><input data-user-id="${it.id}" data-user-key="quota_remaining" value="${it.quota_remaining ?? 0}" /></td><td><input data-user-id="${it.id}" data-user-key="quota_used" value="${it.quota_used ?? 0}" /></td><td>${it.last_login_at || "-"}</td><td><button class="secondary" data-action="save-user" data-id="${it.id}">保存</button></td>`;
           b.appendChild(tr);
         }
+        if (!items.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="10" style="text-align:center;color:#64748b;padding:16px 8px">暂无用户记录</td>`;
+          b.appendChild(tr);
+        }
+        q("usersTableStat").textContent = `用户数 ${items.length}`;
       };
       const loadPortalCdks = async () => {
         if (state.role !== "master") return;
         const r = await req("/api/admin/cdks");
+        const items = Array.isArray(r.items) ? r.items : [];
         const b = q("portalCdksTable"); b.innerHTML = "";
-        for (const it of (r.items || [])) {
+        for (const it of items) {
           const tr = document.createElement("tr");
           tr.innerHTML = `<td>${it.id}</td><td>${esc(it.code || "-")}</td><td>${it.quota_times ?? 0}</td><td>${esc(it.batch_prefix || "-")}</td><td>${esc(it.note || "")}</td><td><input type="checkbox" data-cdk-id="${it.id}" data-cdk-key="enabled" ${it.enabled ? "checked" : ""} /></td><td>${esc(it.redeemed_username || "-")}</td><td>${it.redeemed_at || "-"}</td><td>${it.created_at || "-"}</td><td><button class="secondary" data-action="save-cdk" data-id="${it.id}">保存</button></td>`;
           b.appendChild(tr);
         }
+        if (!items.length) {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td colspan="10" style="text-align:center;color:#64748b;padding:16px 8px">暂无 CDK 记录</td>`;
+          b.appendChild(tr);
+        }
+        q("cdkTableStat").textContent = `CDK ${items.length}`;
       };
       const closeNodeDetailDrawer = () => {
         q("nodeDetailBackdrop").classList.add("hidden");
@@ -1436,6 +2364,7 @@
           });
         renderClusterKpis(allItems);
         q("clusterResultHint").textContent = `显示 ${filtered.length}/${allItems.length} 个节点`;
+        q("clusterTableStat").textContent = `节点 ${filtered.length}/${allItems.length}`;
 
         const b = q("clusterNodesTable");
         b.innerHTML = "";
@@ -1475,17 +2404,15 @@
         state.token = cachedToken;
         try {
           setActivePage("overview");
-          q("loginPanel").classList.add("hidden");
-          q("dashboard").style.display = "block";
+          setDashboardVisible(true);
           await loadAll();
           clearNotice();
         } catch (_) {
           state.token = "";
           state.role = "unknown";
           localStorage.removeItem(TOKEN_STORAGE_KEY);
-          q("dashboard").style.display = "none";
-          q("loginPanel").classList.remove("hidden");
-          q("roleBadge").textContent = "当前角色：未登录";
+          setDashboardVisible(false);
+          applyRoleLayout("unknown");
         }
       };
       const loadAll = async () => {
@@ -1508,20 +2435,14 @@
           state.token = r.token; state.role = r.role || "unknown";
           localStorage.setItem(TOKEN_STORAGE_KEY, state.token);
           setActivePage("overview");
-          q("loginPanel").classList.add("hidden"); q("dashboard").style.display = "block";
+          setDashboardVisible(true);
           await loadAll();
           showNotice("登录成功，后台已加载。", "ok");
         } catch (err) { showNotice(`登录失败：${err.message}`, "err"); }
       });
 
-      q("logoutBtn").addEventListener("click", async () => {
-        try { if (state.token) await req("/api/admin/logout", { method: "POST" }); } catch (_) {}
-        state.token = ""; state.role = "unknown";
-        localStorage.removeItem(TOKEN_STORAGE_KEY);
-        closeNodeDetailDrawer();
-        setActivePage("overview");
-        q("dashboard").style.display = "none"; q("loginPanel").classList.remove("hidden"); q("roleBadge").textContent = "当前角色：未登录"; clearNotice();
-      });
+      q("logoutBtn").addEventListener("click", performLogout);
+      q("sidebarLogoutBtn").addEventListener("click", performLogout);
       q("refreshAllBtn").addEventListener("click", async () => { try { await loadAll(); showNotice("全部数据已刷新。", "ok"); } catch (err) { showNotice(`刷新失败：${err.message}`, "err"); } });
       q("refreshLogsBtn").addEventListener("click", async () => {
         try {
@@ -1830,6 +2751,7 @@
       });
       loadRevealedApiKeys();
       renderLogsPager();
+      setDashboardVisible(false);
       tryRestoreLogin();
     })();
   </script>

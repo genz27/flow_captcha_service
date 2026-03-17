@@ -31,6 +31,39 @@ const state = {
   },
 };
 
+const pageMetaMap = {
+  dashboard: {
+    eyebrow: "概览",
+    title: "我的次数与使用情况",
+    desc: "集中查看当前账号的剩余次数、调用成功率和最近一次充值结果。",
+    shortTitle: "概览",
+  },
+  apiKeys: {
+    eyebrow: "API Key",
+    title: "个人 API Key 工作区",
+    desc: "申请、启停并复制自己的 API Key，完整 Key 仅在创建后返回并在本页缓存显示。",
+    shortTitle: "API Key",
+  },
+  redeem: {
+    eyebrow: "充值中心",
+    title: "充值与消费记录",
+    desc: "兑换管理员发放的 CDK，并回看最近的充值结果和每一次额度变化。",
+    shortTitle: "充值中心",
+  },
+  logs: {
+    eyebrow: "调用记录",
+    title: "接口调用日志",
+    desc: "筛选查看当前账号下的调用状态、项目标识和失败原因，便于排查接入问题。",
+    shortTitle: "调用记录",
+  },
+  account: {
+    eyebrow: "账号信息",
+    title: "当前登录账号",
+    desc: "查看当前用户名称、剩余次数和账号基础信息，不涉及管理员侧数据。",
+    shortTitle: "账号信息",
+  },
+};
+
 const dom = {
   byId(id) {
     return document.getElementById(id);
@@ -254,12 +287,18 @@ function switchPage(page) {
   ["dashboard", "apiKeys", "redeem", "logs", "account"].forEach((name) => {
     dom.byId(`page${name.charAt(0).toUpperCase()}${name.slice(1)}`)?.classList.toggle("active", name === page);
   });
+  const meta = pageMetaMap[page] || pageMetaMap.dashboard;
+  setText("workspaceEyebrow", meta.eyebrow);
+  setText("workspaceTitle", meta.title);
+  setText("workspaceDesc", meta.desc);
+  setText("workspacePage", meta.shortTitle);
 }
 
 function renderShell() {
   const authenticated = isAuthenticated();
   showBlock("guestView", !authenticated);
   showBlock("appView", authenticated);
+  document.body.classList.toggle("portal-authenticated", authenticated);
   if (!authenticated) {
     closeApiKeyModal();
     showBlock("appNotice", false);
@@ -296,10 +335,11 @@ async function loadSummary() {
 
 function renderHeader() {
   const user = state.user || {};
-  setText("headerTitle", `你好，${user.username || "用户"}`);
-  setText("headerSubtitle", "这里只展示当前账号自己的信息与操作。");
+  setText("headerTitle", user.username || "当前账号");
+  setText("headerSubtitle", "仅展示当前账号自己的信息与操作。");
   setText("headerUsername", user.username || "--");
   setText("headerQuota", `剩余次数 ${user.quota_remaining ?? 0}`);
+  setText("workspaceUser", user.username || "--");
 }
 
 function renderDashboard() {

@@ -1478,7 +1478,9 @@ class TokenBrowser:
         """返回最近一次打码浏览器的指纹快照。"""
         if not self._last_fingerprint:
             return None
-        return dict(self._last_fingerprint)
+        sanitized = dict(self._last_fingerprint)
+        sanitized.pop("proxy_url", None)
+        return sanitized
     
     async def get_token(
         self,

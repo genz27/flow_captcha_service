@@ -58,35 +58,56 @@
     </section>
 
     <section id="appView" class="app-screen hidden-block">
-      <header class="app-header">
-        <div class="app-brand">
-          <span class="brand-chip solid">用户控制台</span>
-          <div>
-            <h1 id="headerTitle">欢迎回来</h1>
-            <p id="headerSubtitle" class="header-subtitle">这里只展示当前账号自己的信息与操作。</p>
+      <aside class="app-sidebar">
+        <header class="app-header">
+          <div class="app-brand">
+            <span class="brand-chip solid">用户控制台</span>
+            <div>
+              <h1 id="headerTitle">欢迎回来</h1>
+              <p id="headerSubtitle" class="header-subtitle">这里只展示当前账号自己的信息与操作。</p>
+            </div>
           </div>
-        </div>
 
-        <div class="app-userbar">
-          <div class="user-pill">
-            <span id="headerUsername">--</span>
-            <small id="headerQuota">剩余次数 --</small>
+          <div class="app-userbar">
+            <div class="user-pill">
+              <span id="headerUsername">--</span>
+              <small id="headerQuota">剩余次数 --</small>
+            </div>
+            <button id="logoutBtn" class="btn ghost" type="button">退出登录</button>
           </div>
-          <button id="logoutBtn" class="btn ghost" type="button">退出登录</button>
-        </div>
-      </header>
+        </header>
 
-      <nav class="app-nav">
-        <button class="nav-btn active" type="button" data-page="dashboard">概览</button>
-        <button class="nav-btn" type="button" data-page="apiKeys">API Key</button>
-        <button class="nav-btn" type="button" data-page="redeem">充值中心</button>
-        <button class="nav-btn" type="button" data-page="logs">调用记录</button>
-        <button class="nav-btn" type="button" data-page="account">账号信息</button>
-      </nav>
+        <nav class="app-nav">
+          <button class="nav-btn active" type="button" data-page="dashboard"><span class="nav-main">概览</span><span class="nav-meta">查看次数、成功率和最近兑换</span></button>
+          <button class="nav-btn" type="button" data-page="apiKeys"><span class="nav-main">API Key</span><span class="nav-meta">申请、复制和管理个人密钥</span></button>
+          <button class="nav-btn" type="button" data-page="redeem"><span class="nav-main">充值中心</span><span class="nav-meta">兑换 CDK 并查看余额变动</span></button>
+          <button class="nav-btn" type="button" data-page="logs"><span class="nav-main">调用记录</span><span class="nav-meta">回看接口调用状态与失败原因</span></button>
+          <button class="nav-btn" type="button" data-page="account"><span class="nav-main">账号信息</span><span class="nav-meta">查看当前账号与配额信息</span></button>
+        </nav>
+      </aside>
 
-      <div id="appNotice" class="notice info hidden-block"></div>
+      <main class="app-main">
+        <section class="workspace-panel">
+          <div class="workspace-copy">
+            <div id="workspaceEyebrow" class="section-eyebrow">概览</div>
+            <h2 id="workspaceTitle">我的次数与使用情况</h2>
+            <p id="workspaceDesc" class="workspace-desc">集中查看当前账号的剩余次数、调用成功率和最近一次充值结果。</p>
+          </div>
+          <div class="workspace-stats">
+            <div class="workspace-stat">
+              <span>当前账号</span>
+              <strong id="workspaceUser">--</strong>
+            </div>
+            <div class="workspace-stat">
+              <span>当前模块</span>
+              <strong id="workspacePage">概览</strong>
+            </div>
+          </div>
+        </section>
 
-      <section id="pageDashboard" class="page active">
+        <div id="appNotice" class="notice info hidden-block"></div>
+
+        <section id="pageDashboard" class="page active">
         <div class="section-head">
           <div>
             <div class="section-eyebrow">概览</div>
@@ -123,9 +144,9 @@
             <div class="summary-item"><span>兑换时间</span><strong id="latestRedeemTime">--</strong></div>
           </div>
         </section>
-      </section>
+        </section>
 
-      <section id="pageApiKeys" class="page">
+        <section id="pageApiKeys" class="page">
         <div class="section-head">
           <div>
             <div class="section-eyebrow">API Key</div>
@@ -155,9 +176,9 @@
             </tbody>
           </table>
         </div>
-      </section>
+        </section>
 
-      <section id="pageRedeem" class="page">
+        <section id="pageRedeem" class="page">
         <div class="section-head">
           <div>
             <div class="section-eyebrow">充值中心</div>
@@ -223,9 +244,9 @@
             </div>
           </div>
         </section>
-      </section>
+        </section>
 
-      <section id="pageLogs" class="page">
+        <section id="pageLogs" class="page">
         <div class="section-head">
           <div>
             <div class="section-eyebrow">调用记录</div>
@@ -256,9 +277,9 @@
             <button id="logsNextBtn" class="btn ghost mini-btn" type="button">下一页</button>
           </div>
         </div>
-      </section>
+        </section>
 
-      <section id="pageAccount" class="page">
+        <section id="pageAccount" class="page">
         <div class="section-head">
           <div>
             <div class="section-eyebrow">账号信息</div>
@@ -274,7 +295,8 @@
           <article class="account-card"><span>创建时间</span><strong id="accountCreatedAtValue">--</strong></article>
           <article class="account-card"><span>最后登录</span><strong id="accountLastLoginValue">--</strong></article>
         </div>
-      </section>
+        </section>
+      </main>
     </section>
   </main>
 
