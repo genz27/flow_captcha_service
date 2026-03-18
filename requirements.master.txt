@@ -2,6 +2,6 @@ fastapi==0.119.0
 uvicorn[standard]==0.32.1
 aiosqlite==0.20.0
 pydantic==2.10.4
-curl-cffi==0.7.3
+curl-cffi==0.14.0
 tomli==2.2.1
 python-multipart==0.0.20
