@@ -788,13 +788,19 @@ class TokenBrowser:
 
     def _reload_wait_timeout_seconds(self) -> float:
         try:
-            return max(1.0, float(getattr(config, "browser_reload_wait_timeout_seconds", 12.0) or 12.0))
+            raw_value = getattr(config, "browser_reload_wait_timeout_seconds", 12.0)
+            if raw_value is None or raw_value == "":
+                return 12.0
+            return max(0.0, float(raw_value))
         except Exception:
             return 12.0
 
     def _clr_wait_timeout_seconds(self) -> float:
         try:
-            return max(1.0, float(getattr(config, "browser_clr_wait_timeout_seconds", 12.0) or 12.0))
+            raw_value = getattr(config, "browser_clr_wait_timeout_seconds", 12.0)
+            if raw_value is None or raw_value == "":
+                return 12.0
+            return max(0.0, float(raw_value))
         except Exception:
             return 12.0
 
@@ -2288,25 +2294,33 @@ class TokenBrowser:
             stage_timings["execute_ms"] = int((time.perf_counter() - execute_started) * 1000)
 
             # 按要求：等待 enterprise/reload 与 enterprise/clr 均出现并返回 200
-            try:
-                reload_started = time.perf_counter()
-                await asyncio.wait_for(reload_ok_event.wait(), timeout=self._reload_wait_timeout_seconds())
-                stage_timings["reload_wait_ms"] = int((time.perf_counter() - reload_started) * 1000)
-            except asyncio.TimeoutError:
-                debug_logger.log_warning(
-                    f"[BrowserCaptcha] Token-{self.token_id} 等待 recaptcha enterprise/reload 200 超时"
-                )
-                return None
+            reload_wait_timeout_seconds = self._reload_wait_timeout_seconds()
+            if reload_wait_timeout_seconds > 0:
+                try:
+                    reload_started = time.perf_counter()
+                    await asyncio.wait_for(reload_ok_event.wait(), timeout=reload_wait_timeout_seconds)
+                    stage_timings["reload_wait_ms"] = int((time.perf_counter() - reload_started) * 1000)
+                except asyncio.TimeoutError:
+                    debug_logger.log_warning(
+                        f"[BrowserCaptcha] Token-{self.token_id} 等待 recaptcha enterprise/reload 200 超时"
+                    )
+                    return None
+            else:
+                stage_timings["reload_wait_ms"] = 0
 
-            try:
-                clr_started = time.perf_counter()
-                await asyncio.wait_for(clr_ok_event.wait(), timeout=self._clr_wait_timeout_seconds())
-                stage_timings["clr_wait_ms"] = int((time.perf_counter() - clr_started) * 1000)
-            except asyncio.TimeoutError:
-                debug_logger.log_warning(
-                    f"[BrowserCaptcha] Token-{self.token_id} 等待 recaptcha enterprise/clr 200 超时"
-                )
-                return None
+            clr_wait_timeout_seconds = self._clr_wait_timeout_seconds()
+            if clr_wait_timeout_seconds > 0:
+                try:
+                    clr_started = time.perf_counter()
+                    await asyncio.wait_for(clr_ok_event.wait(), timeout=clr_wait_timeout_seconds)
+                    stage_timings["clr_wait_ms"] = int((time.perf_counter() - clr_started) * 1000)
+                except asyncio.TimeoutError:
+                    debug_logger.log_warning(
+                        f"[BrowserCaptcha] Token-{self.token_id} 等待 recaptcha enterprise/clr 200 超时"
+                    )
+                    return None
+            else:
+                stage_timings["clr_wait_ms"] = 0
 
             # 即使 reload/clr 都已返回 200，也额外等待几秒，确保 enterprise 请求链路完全稳定。
             post_wait_seconds = float(getattr(config, "browser_recaptcha_settle_seconds", 3) or 3)
@@ -2976,7 +2990,6 @@ class BrowserCaptchaService:
                         if browser.idle_seconds() < idle_ttl:
                             continue
                         await browser.recycle_browser(reason=f"idle_ttl_{idle_ttl}s", rotate_profile=False)
-                        await self._invalidate_standby_tokens_for_browser(browser.token_id)
                     except Exception as e:
                         debug_logger.log_warning(f"[BrowserCaptcha] idle reaper failed: {e}")
             except asyncio.CancelledError:
@@ -3395,6 +3408,16 @@ class BrowserCaptchaService:
         except Exception:
             return 45.0
 
+    def _standby_refill_wait_seconds(self) -> float:
+        try:
+            return max(0.05, float(getattr(config, "browser_standby_refill_idle_seconds", 0.8) or 0.8))
+        except Exception:
+            return 0.8
+
+    def _standby_refill_retry_rounds(self) -> int:
+        depth = max(1, self._standby_pool_depth())
+        return max(4, self._browser_count * depth * 2)
+
     def _get_browser_epoch_for_standby(self, browser_id: int) -> Optional[int]:
         browser = self._browsers.get(browser_id)
         if not browser:
@@ -3417,8 +3440,48 @@ class BrowserCaptchaService:
             return False
         current_epoch = self._get_browser_epoch_for_standby(entry.browser_id)
         if current_epoch is None:
-            return False
+            return True
         return int(current_epoch) == int(entry.browser_epoch)
+
+    async def _select_idle_browser_id_for_refill(
+        self,
+        project_id: str,
+        preferred_browser_id: Optional[int],
+    ) -> Optional[int]:
+        project_key = str(project_id or "").strip()
+        affinity_slots: List[int] = []
+        if project_key:
+            async with self._project_slot_lock:
+                self._trim_project_affinity_locked()
+                affinity_slots = [
+                    slot
+                    for slot in self._project_slot_affinity.get(project_key, [])
+                    if 0 <= slot < self._browser_count
+                ]
+
+        async with self._browsers_lock:
+            def is_slot_idle(slot_id: int) -> bool:
+                browser = self._browsers.get(slot_id)
+                return browser is None or not getattr(browser, "is_busy", lambda: False)()
+
+            if preferred_browser_id is not None and 0 <= preferred_browser_id < self._browser_count:
+                if is_slot_idle(preferred_browser_id):
+                    return preferred_browser_id
+
+            for slot_id in affinity_slots:
+                if slot_id == preferred_browser_id:
+                    continue
+                if is_slot_idle(slot_id):
+                    return slot_id
+
+            for offset in range(self._browser_count):
+                slot_id = (self._round_robin_index + offset) % self._browser_count
+                if slot_id == preferred_browser_id:
+                    continue
+                if is_slot_idle(slot_id):
+                    return slot_id
+
+        return None
 
     async def _take_standby_token(self, bucket_key: str) -> Optional[TokenAcquireResult]:
         now_value = time.monotonic()
@@ -3587,42 +3650,55 @@ class BrowserCaptchaService:
         preferred_browser_id: Optional[int],
     ):
         try:
-            await asyncio.sleep(float(getattr(config, "browser_standby_refill_idle_seconds", 0.8) or 0.8))
-            if self._foreground_solves_inflight > 0:
-                return
+            refill_wait_seconds = self._standby_refill_wait_seconds()
+            next_preferred_browser_id = preferred_browser_id
 
-            if preferred_browser_id is not None:
-                browser = self._browsers.get(preferred_browser_id)
-                if browser is None or browser.is_busy():
+            for _ in range(self._standby_refill_retry_rounds()):
+                await asyncio.sleep(refill_wait_seconds)
+
+                now_value = time.monotonic()
+                async with self._standby_lock:
+                    current_depth = len(
+                        [
+                            entry
+                            for entry in self._standby_tokens.get(bucket_key, [])
+                            if self._is_standby_entry_valid(entry, now_monotonic=now_value)
+                        ]
+                    )
+                target_depth = self._standby_pool_depth()
+                if target_depth <= 0 or current_depth >= target_depth:
                     return
+
+                refill_browser_id = await self._select_idle_browser_id_for_refill(
+                    project_id=project_id,
+                    preferred_browser_id=next_preferred_browser_id,
+                )
+                if refill_browser_id is None:
+                    continue
+
                 result = await self._acquire_live_token(
                     project_id=project_id,
                     action=action,
                     token_proxy_url=token_proxy_url,
-                    browser_id=preferred_browser_id,
+                    browser_id=refill_browser_id,
                 )
-            else:
-                result = await self._acquire_live_token(
+
+                if not result.token:
+                    self._stats["standby_fill_fail"] += 1
+                    return
+
+                result.source = "standby_fill"
+                await self._store_standby_token(
+                    bucket_key=bucket_key,
+                    result=result,
                     project_id=project_id,
                     action=action,
-                    token_proxy_url=token_proxy_url,
                 )
-
-            if not result.token:
-                self._stats["standby_fill_fail"] += 1
-                return
-
-            result.source = "standby_fill"
-            await self._store_standby_token(
-                bucket_key=bucket_key,
-                result=result,
-                project_id=project_id,
-                action=action,
-            )
-            self._stats["standby_fill_ok"] += 1
-            debug_logger.log_info(
-                f"[BrowserCaptcha] standby token refilled bucket={bucket_key[:120]} browser={result.browser_id}"
-            )
+                self._stats["standby_fill_ok"] += 1
+                next_preferred_browser_id = result.browser_id
+                debug_logger.log_info(
+                    f"[BrowserCaptcha] standby token refilled bucket={bucket_key[:120]} browser={result.browser_id}"
+                )
         except Exception as e:
             self._stats["standby_fill_fail"] += 1
             debug_logger.log_warning(f"[BrowserCaptcha] standby refill failed bucket={bucket_key[:120]}: {e}")

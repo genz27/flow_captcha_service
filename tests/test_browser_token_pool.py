@@ -81,6 +81,30 @@ class BrowserTokenPoolTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result)
         self.assertNotIn(self.bucket_key, self.service._standby_tokens)
 
+    async def test_missing_browser_epoch_keeps_entry_usable(self):
+        now_value = time.monotonic()
+        self.service._standby_tokens[self.bucket_key] = [
+            StandbyTokenEntry(
+                token="warm-token",
+                browser_id=5,
+                fingerprint={"user_agent": "ua-live"},
+                browser_epoch=9,
+                project_id="project-a",
+                action="IMAGE_GENERATION",
+                proxy_signature="-",
+                created_monotonic=now_value,
+                expires_monotonic=now_value + 30,
+            )
+        ]
+
+        with patch.object(self.service, "_get_browser_epoch_for_standby", return_value=None):
+            result = await self.service._take_standby_token(self.bucket_key)
+
+        self.assertIsNotNone(result)
+        self.assertEqual(result.token, "warm-token")
+        self.assertEqual(result.browser_ref, 5)
+        self.assertNotIn(self.bucket_key, self.service._standby_tokens)
+
     async def test_custom_token_uses_shared_browser_path(self):
         browser = TokenBrowser(3, "tmp/test-custom-token-shared")
         fake_context = object()
@@ -277,6 +301,29 @@ class BrowserTokenPoolTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(browser_id, 2)
         select_mock.assert_awaited_once()
 
+    async def test_refill_prefers_other_idle_browser_when_preferred_busy(self):
+        service = BrowserCaptchaService()
+        service._browser_count = 3
+
+        class FakeBrowser:
+            def __init__(self, busy):
+                self._busy = busy
+
+            def is_busy(self):
+                return self._busy
+
+        service._browsers = {
+            0: FakeBrowser(True),
+            1: FakeBrowser(False),
+        }
+
+        selected = await service._select_idle_browser_id_for_refill(
+            project_id="project-a",
+            preferred_browser_id=0,
+        )
+
+        self.assertEqual(selected, 1)
+
     async def test_project_affinity_trim_evicts_old_keys(self):
         service = BrowserCaptchaService()
         service._project_slot_affinity = {
@@ -458,6 +505,52 @@ class BrowserTokenPoolTests(unittest.IsolatedAsyncioTestCase):
                 "viewport": {"width": 430, "height": 932},
             },
         )
+
+    async def test_refill_retries_until_idle_browser_is_available(self):
+        service = BrowserCaptchaService()
+        service._browser_count = 2
+
+        with patch(
+            "src.services.browser_captcha.config",
+            SimpleNamespace(
+                browser_standby_refill_idle_seconds=0.01,
+                browser_standby_token_pool_enabled=True,
+                browser_standby_token_pool_depth=1,
+                browser_standby_token_ttl_seconds=45,
+            ),
+        ):
+            with patch.object(
+                service,
+                "_select_idle_browser_id_for_refill",
+                AsyncMock(side_effect=[None, 1]),
+            ) as select_mock:
+                with patch.object(
+                    service,
+                    "_acquire_live_token",
+                    AsyncMock(
+                        return_value=SimpleNamespace(
+                            token="filled-token",
+                            browser_id=1,
+                            browser_ref=1,
+                            fingerprint={"user_agent": "ua-fill"},
+                            source="live",
+                            elapsed_ms=0,
+                            browser_epoch=3,
+                        )
+                    ),
+                ) as acquire_mock:
+                    await service._refill_standby_token(
+                        bucket_key=self.bucket_key,
+                        project_id="project-a",
+                        action="IMAGE_GENERATION",
+                        token_proxy_url=None,
+                        preferred_browser_id=0,
+                    )
+
+        self.assertGreaterEqual(select_mock.await_count, 2)
+        acquire_mock.assert_awaited_once()
+        self.assertIn(self.bucket_key, service._standby_tokens)
+        self.assertEqual(service._standby_tokens[self.bucket_key][0].token, "filled-token")
 
 
 if __name__ == "__main__":

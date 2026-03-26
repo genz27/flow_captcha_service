@@ -206,7 +206,7 @@ class Config:
                 "browser_project_affinity_max_keys": 0,
                 "browser_project_affinity_ttl_seconds": 1800,
                 "browser_score_dom_wait_seconds": 25,
-                "browser_recaptcha_settle_seconds": 3,
+                "browser_recaptcha_settle_seconds": 0,
                 "browser_standby_token_pool_enabled": True,
                 "browser_standby_token_ttl_seconds": 45,
                 "browser_standby_token_pool_depth": 2,
@@ -506,7 +506,7 @@ class Config:
         value = os.getenv("FCS_BROWSER_RECAPTCHA_SETTLE_SECONDS")
         if value:
             return float(value)
-        return float(self._get("captcha", "browser_recaptcha_settle_seconds", 3))
+        return float(self._get("captcha", "browser_recaptcha_settle_seconds", 0))
 
     @property
     def browser_standby_token_pool_enabled(self) -> bool:
@@ -654,11 +654,11 @@ class Config:
         value = os.getenv("FCS_BROWSER_RELOAD_WAIT_TIMEOUT_SECONDS")
         if value:
             try:
-                return max(1.0, float(value))
+                return max(0.0, float(value))
             except Exception:
                 return 12.0
         try:
-            return max(1.0, float(self._get("captcha", "browser_reload_wait_timeout_seconds", 12)))
+            return max(0.0, float(self._get("captcha", "browser_reload_wait_timeout_seconds", 12)))
         except Exception:
             return 12.0
 
@@ -667,11 +667,11 @@ class Config:
         value = os.getenv("FCS_BROWSER_CLR_WAIT_TIMEOUT_SECONDS")
         if value:
             try:
-                return max(1.0, float(value))
+                return max(0.0, float(value))
             except Exception:
                 return 12.0
         try:
-            return max(1.0, float(self._get("captcha", "browser_clr_wait_timeout_seconds", 12)))
+            return max(0.0, float(self._get("captcha", "browser_clr_wait_timeout_seconds", 12)))
         except Exception:
             return 12.0
 
