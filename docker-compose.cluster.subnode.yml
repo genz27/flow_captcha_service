@@ -1,11 +1,11 @@
-﻿services:
+services:
   flow-captcha-subnode:
     build:
       context: .
       dockerfile: Dockerfile.headed
     container_name: flow-captcha-subnode
     ports:
-      - "8061:8060"
+      - "${PORT:-8060}:8060"
     environment:
       - ALLOW_DOCKER_HEADED_CAPTCHA=true
       - DISPLAY=:99
@@ -13,15 +13,41 @@
       - FCS_SERVER_HOST=0.0.0.0
       - FCS_SERVER_PORT=8060
       - FCS_CONFIG_FILE=/app/data/setting.toml
+      - FCS_LOG_LEVEL=${FCS_LOG_LEVEL:-INFO}
+
+      # Auth
+      - FCS_ADMIN_USERNAME=${FCS_ADMIN_USERNAME:-admin}
+      - FCS_ADMIN_PASSWORD=${FCS_ADMIN_PASSWORD:-changeme}
+
+      # Cluster
       - FCS_CLUSTER_ROLE=subnode
       - FCS_NODE_NAME=${FCS_NODE_NAME:-subnode-1}
       - FCS_CLUSTER_MASTER_BASE_URL=${FCS_CLUSTER_MASTER_BASE_URL:-http://host.docker.internal:8060}
       - FCS_CLUSTER_MASTER_CLUSTER_KEY=${FCS_CLUSTER_MASTER_CLUSTER_KEY:-replace-with-master-cluster-key}
-      - FCS_CLUSTER_NODE_PUBLIC_BASE_URL=${FCS_CLUSTER_NODE_PUBLIC_BASE_URL:-http://host.docker.internal:8061}
+      - FCS_CLUSTER_NODE_PUBLIC_BASE_URL=${FCS_CLUSTER_NODE_PUBLIC_BASE_URL:-http://host.docker.internal:8060}
       - FCS_CLUSTER_NODE_API_KEY=${FCS_CLUSTER_NODE_API_KEY:-replace-with-node-internal-key}
       - FCS_CLUSTER_NODE_WEIGHT=${FCS_CLUSTER_NODE_WEIGHT:-100}
       - FCS_CLUSTER_NODE_MAX_CONCURRENCY=${FCS_CLUSTER_NODE_MAX_CONCURRENCY:-0}
       - FCS_CLUSTER_HEARTBEAT_INTERVAL_SECONDS=${FCS_CLUSTER_HEARTBEAT_INTERVAL_SECONDS:-15}
+
+      # Browser
+      - FCS_BROWSER_COUNT=${FCS_BROWSER_COUNT:-5}
+
+      # Proxy — session affinity
+      - FCS_BROWSER_PROXY_ENABLED=${FCS_BROWSER_PROXY_ENABLED:-false}
+      - FCS_BROWSER_PROXY_URL=${FCS_BROWSER_PROXY_URL:-}
+      # CLUSTER_NODE_IDENTIFIER: unique per subnode, prefixed into session_id
+      # so different subnodes never share a proxy gateway slot.
+      # Format: {CLUSTER_NODE_IDENTIFIER}_slot_{browser_id}  e.g. subnode-1_slot_3
+      - CLUSTER_NODE_IDENTIFIER=${CLUSTER_NODE_IDENTIFIER:-subnode-1}
+
+      # Fingerprint & behavior (background standby refill only)
+      - BROWSER_FINGERPRINT_MODE=${BROWSER_FINGERPRINT_MODE:-fixed_per_slot}
+      - BROWSER_CAPTCHA_DWELL_SECONDS=${BROWSER_CAPTCHA_DWELL_SECONDS:-15}
+      - BROWSER_DWELL_BACKGROUND_ONLY=${BROWSER_DWELL_BACKGROUND_ONLY:-true}
+      - BROWSER_SOLVE_MIN_INTERVAL_SECONDS=${BROWSER_SOLVE_MIN_INTERVAL_SECONDS:-30}
+      - FCS_BROWSER_STANDBY_TOKEN_TTL_SECONDS=${FCS_BROWSER_STANDBY_TOKEN_TTL_SECONDS:-90}
+
     volumes:
       - ./data/subnode:/app/data
       - ./config:/app/config

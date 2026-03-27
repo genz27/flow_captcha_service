@@ -208,7 +208,7 @@ class Config:
                 "browser_score_dom_wait_seconds": 25,
                 "browser_recaptcha_settle_seconds": 3,
                 "browser_standby_token_pool_enabled": True,
-                "browser_standby_token_ttl_seconds": 45,
+                "browser_standby_token_ttl_seconds": 90,
                 "browser_standby_token_pool_depth": 2,
                 "browser_standby_bucket_max_count": 0,
                 "browser_standby_bucket_idle_ttl_seconds": 0,
@@ -524,9 +524,9 @@ class Config:
             except Exception:
                 return 45.0
         try:
-            return max(5.0, float(self._get("captcha", "browser_standby_token_ttl_seconds", 45)))
+            return max(5.0, float(self._get("captcha", "browser_standby_token_ttl_seconds", 90)))
         except Exception:
-            return 45.0
+            return 90.0
 
     @property
     def browser_standby_token_pool_depth(self) -> int:
@@ -892,6 +892,32 @@ class Config:
         if value:
             return max(5, int(value))
         return max(5, int(self._get("cluster", "master_dispatch_timeout_seconds", 45)))
+
+    @property
+    def cluster_node_identifier(self) -> str:
+        return os.getenv("CLUSTER_NODE_IDENTIFIER", "node0")
+
+    @property
+    def browser_fingerprint_mode(self) -> str:
+        return os.getenv("BROWSER_FINGERPRINT_MODE", "random")
+
+    @property
+    def browser_captcha_dwell_seconds(self) -> float:
+        try:
+            return max(0.0, float(os.getenv("BROWSER_CAPTCHA_DWELL_SECONDS", "0")))
+        except Exception:
+            return 0.0
+
+    @property
+    def browser_dwell_background_only(self) -> bool:
+        return os.getenv("BROWSER_DWELL_BACKGROUND_ONLY", "true").lower() != "false"
+
+    @property
+    def browser_solve_min_interval_seconds(self) -> float:
+        try:
+            return max(0.0, float(os.getenv("BROWSER_SOLVE_MIN_INTERVAL_SECONDS", "0")))
+        except Exception:
+            return 0.0
 
 
 config = Config()

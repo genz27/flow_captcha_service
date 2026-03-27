@@ -282,6 +282,11 @@ def normalize_browser_proxy_pool(proxy_value: str) -> tuple[List[str], List[str]
     return normalized, warnings
 
 
+def inject_session_id(proxy_url: str, session_id: str) -> str:
+    """Replace {session_id} placeholder in proxy URL with the actual session identifier."""
+    return proxy_url.replace("{session_id}", session_id)
+
+
 def validate_browser_proxy_url(proxy_url: str) -> tuple[bool, str]:
     proxy_pool = split_browser_proxy_pool(proxy_url)
     if not proxy_pool:
@@ -724,7 +729,9 @@ class TokenBrowser:
         self._browser_epoch = 0
         self._profile_pool = self._build_profile_pool()
         self._active_profile: Optional[BrowserProfile] = None
-        self._refresh_browser_profile()
+        self._last_solve_completed_at: float = 0.0
+        fixed = getattr(config, "browser_fingerprint_mode", "random") == "fixed_per_slot"
+        self._refresh_browser_profile(fixed_per_slot=fixed)
 
     def _fingerprint_pool_extra_count(self) -> int:
         try:
@@ -746,11 +753,14 @@ class TokenBrowser:
         self.PROFILE_POOL_CACHE[extra_count] = profile_pool
         return profile_pool
 
-    def _refresh_browser_profile(self):
+    def _refresh_browser_profile(self, fixed_per_slot: bool = False):
         """Refresh the in-memory browser fingerprint profile."""
         if not self._profile_pool:
             self._profile_pool = self._build_profile_pool()
-        profile = random.choice(self._profile_pool)
+        if fixed_per_slot:
+            profile = self._profile_pool[self.token_id % len(self._profile_pool)]
+        else:
+            profile = random.choice(self._profile_pool)
         self._active_profile = profile
         self._profile_user_agent = profile.user_agent
         self._profile_viewport = dict(profile.viewport)
@@ -1619,6 +1629,10 @@ class TokenBrowser:
                     proxy_source = "global"
 
             if candidate_proxy_url:
+                if "{session_id}" in candidate_proxy_url:
+                    node_identifier = getattr(config, "cluster_node_identifier", "node0")
+                    session_id = f"{node_identifier}_slot_{self.token_id}"
+                    candidate_proxy_url = inject_session_id(candidate_proxy_url, session_id)
                 normalized_proxy_url, proxy_warning = normalize_browser_proxy_url(candidate_proxy_url)
                 if proxy_warning:
                     debug_logger.log_warning(f"[BrowserCaptcha] Token-{self.token_id} {proxy_warning}")
@@ -1765,7 +1779,8 @@ class TokenBrowser:
         self._shared_reuse_count = 0
 
         if rotate_profile:
-            self._refresh_browser_profile()
+            fixed = getattr(config, "browser_fingerprint_mode", "random") == "fixed_per_slot"
+            self._refresh_browser_profile(fixed_per_slot=fixed)
 
         if had_browser:
             self._browser_epoch += 1
@@ -2228,8 +2243,13 @@ class TokenBrowser:
         if close_all:
             await self.recycle_browser(reason="force_close_all", rotate_profile=False)
 
-    async def _execute_captcha(self, context, project_id: str, website_key: str, action: str) -> Optional[TokenAcquireResult]:
+    async def _execute_captcha(self, context, project_id: str, website_key: str, action: str, is_background_refill: bool = False) -> Optional[TokenAcquireResult]:
         """在给定 context 中执行打码逻辑"""
+        dwell = getattr(config, "browser_captcha_dwell_seconds", 0.0) or 0.0
+        if dwell > 0:
+            background_only = getattr(config, "browser_dwell_background_only", True)
+            if not background_only or is_background_refill:
+                await asyncio.sleep(dwell)
         page = None
         handle_response = None
         ready_hit = False
@@ -2666,10 +2686,17 @@ class TokenBrowser:
         project_id: str,
         website_key: str,
         action: str = "IMAGE_GENERATION",
-        token_proxy_url: Optional[str] = None
+        token_proxy_url: Optional[str] = None,
+        is_background_refill: bool = False,
     ) -> TokenAcquireResult:
         """Get a token from the shared browser unless a fatal browser error occurs."""
         async with self._semaphore:
+            min_interval = getattr(config, "browser_solve_min_interval_seconds", 0.0) or 0.0
+            if is_background_refill and min_interval > 0:
+                elapsed = time.monotonic() - self._last_solve_completed_at
+                if elapsed < min_interval:
+                    await asyncio.sleep(min_interval - elapsed)
+
             self._solve_inflight += 1
             max_retries = self._retry_max_attempts()
             retry_backoff_seconds = self._retry_backoff_seconds()
@@ -2680,9 +2707,10 @@ class TokenBrowser:
                         start_ts = time.perf_counter()
                         _, _, context = await self._get_or_create_shared_browser(token_proxy_url=token_proxy_url)
 
-                        result = await self._execute_captcha(context, project_id, website_key, action)
+                        result = await self._execute_captcha(context, project_id, website_key, action, is_background_refill=is_background_refill)
                         if result and result.token:
                             self._solve_count += 1
+                            self._last_solve_completed_at = time.monotonic()
                             self._consecutive_browser_failures = 0
                             elapsed_ms = result.elapsed_ms or int((time.perf_counter() - start_ts) * 1000)
                             ready_hit = bool((result.timings or {}).get("ready_page_hit"))
@@ -3526,6 +3554,7 @@ class BrowserCaptchaService:
         action: str,
         token_proxy_url: Optional[str],
         browser_id: Optional[int] = None,
+        is_background_refill: bool = False,
     ) -> TokenAcquireResult:
         if browser_id is None:
             browser_id = await self._select_browser_id(project_id)
@@ -3535,6 +3564,7 @@ class BrowserCaptchaService:
             self.website_key,
             action,
             token_proxy_url=token_proxy_url,
+            is_background_refill=is_background_refill,
         )
         result.browser_id = browser_id
         result.browser_ref = self._compose_browser_ref(browser_id, None)
@@ -3600,12 +3630,14 @@ class BrowserCaptchaService:
                     action=action,
                     token_proxy_url=token_proxy_url,
                     browser_id=preferred_browser_id,
+                    is_background_refill=True,
                 )
             else:
                 result = await self._acquire_live_token(
                     project_id=project_id,
                     action=action,
                     token_proxy_url=token_proxy_url,
+                    is_background_refill=True,
                 )
 
             if not result.token:

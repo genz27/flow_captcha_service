@@ -12,6 +12,10 @@ class CaptchaConfig(BaseModel):
     browser_proxy_enabled: bool = False
     browser_proxy_url: Optional[str] = None
     browser_count: int = 1
+    browser_fingerprint_mode: str = "random"
+    browser_captcha_dwell_seconds: float = 0.0
+    browser_dwell_background_only: bool = True
+    browser_solve_min_interval_seconds: float = 0.0
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -133,6 +137,10 @@ class UpdateCaptchaConfigRequest(BaseModel):
     browser_proxy_enabled: bool = False
     browser_proxy_url: Optional[str] = None
     browser_count: int = Field(default=1, ge=1)
+    browser_fingerprint_mode: Optional[str] = None
+    browser_captcha_dwell_seconds: Optional[float] = Field(default=None, ge=0)
+    browser_dwell_background_only: Optional[bool] = None
+    browser_solve_min_interval_seconds: Optional[float] = Field(default=None, ge=0)
 
 
 class UpdateAdminCredentialsRequest(BaseModel):
