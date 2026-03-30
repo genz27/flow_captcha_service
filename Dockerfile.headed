@@ -22,6 +22,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --no-cache-dir --root-user-action=ignore -r requirements.txt \
+    && python -c "import nodriver, playwright; print('python deps ok')" \
     && python -m playwright install --with-deps chromium
 
 COPY . .
